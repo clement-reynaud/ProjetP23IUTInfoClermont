@@ -75,6 +75,7 @@ static dSpaceID car_space;
 static dGeomID box[1];
 static dGeomID sphere[4];
 static dGeomID ground_box;
+static dGeomID ground_box2;
 
 
 // things that the user controls
@@ -90,8 +91,8 @@ static void nearCallback(void*, dGeomID o1, dGeomID o2)
     int i, n;
 
     // only collide things with the ground
-    int g1 = (o1 == ground || o1 == ground_box);
-    int g2 = (o2 == ground || o2 == ground_box);
+    int g1 = (o1 == ground || o1 == ground_box || o1 == ground_box2 );
+    int g2 = (o2 == ground || o2 == ground_box || o2 == ground_box2 );
     if (!(g1 ^ g2)) return;
 
     const int N = 10;
@@ -117,8 +118,8 @@ static void nearCallback(void*, dGeomID o1, dGeomID o2)
 
 // start simulation - set viewpoint
 
-static float xyz[3] = { 0,-55,0 };
-static float hpr[3] = { 0.8317f,-0.9817f,0.8000f };
+static float xyz[3] = { 0,0,0 };
+static float hpr[3] = { 0,-10,0 };
 
 static void start()
 {
@@ -306,6 +307,10 @@ static void simLoop(int pause)
     dGeomBoxGetLengths(ground_box, ss);
     dsDrawBox(dGeomGetPosition(ground_box), dGeomGetRotation(ground_box), ss);
 
+    dVector3 ss2;
+    dGeomBoxGetLengths(ground_box2, ss2);
+    dsDrawBox(dGeomGetPosition(ground_box2), dGeomGetRotation(ground_box2), ss2);
+
 }
 
 
@@ -398,6 +403,13 @@ int main(int argc, char** argv)
     dRFromAxisAndAngle(R, 0, 1, 0, -0.15);
     dGeomSetPosition(ground_box, 2, 0, -0.34);
     dGeomSetRotation(ground_box, R);
+
+    // environment 2nd box
+    ground_box2 = dCreateBox(space, 2, 1.5, 1);
+    dMatrix3 R2;
+    dRFromAxisAndAngle(R2, 0, 1, 0, 0);
+    dGeomSetPosition(ground_box2, 4,0, -0.15);
+    dGeomSetRotation(ground_box2, R2);
 
     // run simulation
     dsSimulationLoop(argc, argv, 1000, 800, &fn);
