@@ -110,8 +110,8 @@ static void nearCallback(void*, dGeomID o1, dGeomID o2)
     int i, n;
 
     // only collide things with the ground
-    int g1 = (o1 == ground || o1 == ground_box);
-    int g2 = (o2 == ground || o2 == ground_box);
+    int g1 = (o1 == ground || o1 == ground_box /*|| o1 == box1[0] || o1 == box2[0] || o1 == sphere1[0] || o1 == sphere1[1] || o1 == sphere1[2] || o1 == sphere1[3] || o1 == sphere2[0] || o1 == sphere2[1] || o1 == sphere2[2] || o1 == sphere2[3]*/);
+    int g2 = (o2 == ground || o2 == ground_box /*|| o2 == box1[0] || o2 == box2[0] || o2 == sphere1[0] || o2 == sphere1[1] || o2 == sphere1[2] || o2 == sphere1[3] || o2 == sphere2[0] || o2 == sphere2[1] || o2 == sphere2[2] || o2 == sphere2[3]*/);
     if (!(g1 ^ g2)) return;
 
     const int N = 10;
@@ -406,6 +406,14 @@ void createABuggy(dBodyID* chassis, dBodyID* roues, dJointID* jointChassis_roues
     dSpaceAdd(car_space, sphere[3]);
 }
 
+void destroyBuggy(dGeomID* box, dGeomID* sphere) {
+    dGeomDestroy(box[0]);
+    dGeomDestroy(sphere[0]);
+    dGeomDestroy(sphere[1]);
+    dGeomDestroy(sphere[2]);
+    dGeomDestroy(sphere[3]);
+}
+
 int main(int argc, char** argv)
 {
     int i;
@@ -451,17 +459,8 @@ int main(int argc, char** argv)
     // run simulation
     dsSimulationLoop(argc, argv, 1000, 800, &fn);
 
-    dGeomDestroy(box1[0]);
-    dGeomDestroy(sphere1[0]);
-    dGeomDestroy(sphere1[1]);
-    dGeomDestroy(sphere1[2]);
-    dGeomDestroy(sphere1[3]);
-
-    dGeomDestroy(box2[0]);
-    dGeomDestroy(sphere2[0]);
-    dGeomDestroy(sphere2[1]);
-    dGeomDestroy(sphere2[2]);
-    dGeomDestroy(sphere2[3]);
+    destroyBuggy(box1,sphere1);
+    destroyBuggy(box2,sphere2);
 
     dGeomDestroy(ground_box);
     dJointGroupDestroy(contactgroup);
