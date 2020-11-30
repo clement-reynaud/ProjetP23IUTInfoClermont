@@ -405,11 +405,14 @@ int main(int argc, char** argv)
     dGeomSetRotation(ground_box, R);
 
     // environment 2nd box
-    ground_box2 = dCreateBox(space, 2, 1.5, 1);
+    ground_box2 = dCreateBox(space, 200, 2, 1);
     dMatrix3 R2;
     dRFromAxisAndAngle(R2, 0, 1, 0, 0);
-    dGeomSetPosition(ground_box2, 4,0, -0.15);
+    dGeomSetPosition(ground_box2, 100,0, -0.47);
     dGeomSetRotation(ground_box2, R2);
+
+
+
 
     // run simulation
     dsSimulationLoop(argc, argv, 1000, 800, &fn);
