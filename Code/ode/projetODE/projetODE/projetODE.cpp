@@ -54,9 +54,18 @@
 #define WIDTH 0.5	// chassis width
 #define HEIGHT 0.2	// chassis height
 #define RADIUS 0.3	// wheel radius
-#define STARTZ 0.5	// starting height of chassis
 #define CMASS 1		// chassis mass
 #define WMASS 0.2	// wheel mass
+#define STARTX1 -5   //Start x of chassis 1
+#define STARTY1 0   //Start y of chassis 1
+#define STARTZ 0.5	// starting height of chassis
+#define STARTX2 -10   //Start x of chassis 2
+#define STARTY2 0   //Start y of chassis 2
+
+//Cannon deffinition
+#define CANNON_BALL_MASS 0.1	// mass of the cannon ball
+#define CANNON_BALL_RADIUS 0.05 // size of the cannon ball
+
 
 static const dVector3 yunit = { 0, 1, 0 }, zunit = { 0, 0, 1 };
 
@@ -65,15 +74,25 @@ static const dVector3 yunit = { 0, 1, 0 }, zunit = { 0, 0, 1 };
 
 static dWorldID world;
 static dSpaceID space;
-static dBodyID chassis[1];
+static dBodyID chassis1[1];
 //static dJointID jointChassis[1];	// joint[0] is the front wheel
-static dBodyID roues[4];
-static dJointID jointChassis_roues[4]; // jointChassis_roues[0] & jointChassis_roues[1] are the front wheels
+static dBodyID roues1[4];
+static dBodyID chassis2[1];
+static dBodyID roues2[4];
+static dJointID jointChassis_roues1[4]; // jointChassis_roues[0] & jointChassis_roues[1] are the front wheels
+static dJointID jointChassis_roues2[4];
+static dJointID jointChassis_cannon[2];
+static dJointID jointCannon[2]; // The cannon is composed of a box and a cylinder
+static dGeomID cannon_ball_geom;
+static dBodyID cannon_ball_body;
 static dJointGroupID contactgroup;
 static dGeomID ground;
-static dSpaceID car_space;
-static dGeomID box[1];
-static dGeomID sphere[4];
+static dSpaceID car_space1;
+static dSpaceID car_space2;
+static dGeomID box1[1]; //Box of the chassis 1
+static dGeomID box2[1]; //Box of the chassis 2
+static dGeomID sphere1[4]; //Sphere of wheels 1
+static dGeomID sphere2[4]; //Sphere of wheels 2
 static dGeomID ground_box;
 
 
@@ -81,6 +100,7 @@ static dGeomID ground_box;
 
 static dReal speed = 0, steer = 0;	// user commands
 static bool lock_cam = true;
+static dReal cannon_angle = 0, cannon_elevation = -1.2;
 
 // this is called by dSpaceCollide when two objects in space are
 // potentially colliding.
@@ -130,7 +150,11 @@ static void start()
         "\t'q' to steer left.\n"
         "\t'd' to steer right.\n"
         "\t' ' to reset speed and steering.\n"
-        "\t'1' to save the current state to 'state.dif'.\n");
+        "\t'1' to save the current state to 'state.dif'.\n"
+        "\t'2' to lower the cannon.\n"
+        "\t'3' to raise the cannon.\n"
+        "\t'4' to fire with the cannon.\n"
+    );
 }
 
 float calCos(float xx, float xy, float yx, float yy, const dReal* rota) {
@@ -220,8 +244,10 @@ static void command(int cmd)
         lock_cam = !lock_cam;
         break;
     case '5':
-        retourner(chassis[0]);
+        retourner(chassis1[0]);
         break;
+    case '6':
+        retourner(chassis2[0]);
     case ' ':
         speed = 0;
         steer = 0;
@@ -236,42 +262,36 @@ static void command(int cmd)
     }
 }
 
+void speedAndSteer(dJointID jointChassis_roues) {
+    dJointSetHinge2Param(jointChassis_roues, dParamVel2, -speed);
+    dJointSetHinge2Param(jointChassis_roues, dParamFMax2, 0.1);
+    dReal v = steer - dJointGetHinge2Angle1(jointChassis_roues);
+    if (v > 0.1) v = 0.1;
+    if (v < -0.1) v = -0.1;
+    v *= 10.0;
+    dJointSetHinge2Param(jointChassis_roues, dParamVel, v);
+    dJointSetHinge2Param(jointChassis_roues, dParamFMax, 0.2);
+    dJointSetHinge2Param(jointChassis_roues, dParamLoStop, -0.75);
+    dJointSetHinge2Param(jointChassis_roues, dParamHiStop, 0.75);
+    dJointSetHinge2Param(jointChassis_roues, dParamFudgeFactor, 0.1);
+}
+
+void drawBuggy(dBodyID* chassis, dBodyID* roues, dReal* sides) {
+    dsDrawBox(dBodyGetPosition(chassis[0]), dBodyGetRotation(chassis[0]), sides);
+    dsSetColor(1, 1, 1);
+    for (int i = 0; i <= 3; i++) dsDrawCylinder(dBodyGetPosition(roues[i]),
+        dBodyGetRotation(roues[i]), 0.2f, RADIUS);
+}
 
 // simulation loop
-
 static void simLoop(int pause)
 {
     int i;
     if (!pause) {
-        // motor
-        dJointSetHinge2Param(jointChassis_roues[0], dParamVel2, -speed);
-        dJointSetHinge2Param(jointChassis_roues[0], dParamFMax2, 0.1);
-
-        dJointSetHinge2Param(jointChassis_roues[1], dParamVel2, -speed);
-        dJointSetHinge2Param(jointChassis_roues[1], dParamFMax2, 0.1);
-
-        // steering roue 1
-        dReal v1 = steer - dJointGetHinge2Angle1(jointChassis_roues[0]);
-        if (v1 > 0.1) v1 = 0.1;
-        if (v1 < -0.1) v1 = -0.1;
-        v1 *= 10.0;
-        dJointSetHinge2Param(jointChassis_roues[0], dParamVel, v1);
-        dJointSetHinge2Param(jointChassis_roues[0], dParamFMax, 0.2);
-        dJointSetHinge2Param(jointChassis_roues[0], dParamLoStop, -0.75);
-        dJointSetHinge2Param(jointChassis_roues[0], dParamHiStop, 0.75);
-        dJointSetHinge2Param(jointChassis_roues[0], dParamFudgeFactor, 0.1);
-
-        //steering roue 2
-        dReal v2 = steer - dJointGetHinge2Angle1(jointChassis_roues[1]);
-        if (v2 > 0.1) v2 = 0.1;
-        if (v2 < -0.1) v2 = -0.1;
-        v2 *= 10.0;
-        dJointSetHinge2Param(jointChassis_roues[1], dParamVel, v2);
-        dJointSetHinge2Param(jointChassis_roues[1], dParamFMax, 0.2);
-        dJointSetHinge2Param(jointChassis_roues[1], dParamLoStop, -0.75);
-        dJointSetHinge2Param(jointChassis_roues[1], dParamHiStop, 0.75);
-        dJointSetHinge2Param(jointChassis_roues[1], dParamFudgeFactor, 0.1);
-
+        speedAndSteer(jointChassis_roues1[0]);
+        speedAndSteer(jointChassis_roues1[1]);
+        speedAndSteer(jointChassis_roues2[0]);
+        speedAndSteer(jointChassis_roues2[1]);
 
         //view 
         //Mettre a jour la vue (pour qu'elle suive le robot)
@@ -290,50 +310,43 @@ static void simLoop(int pause)
 
         // fixed or not-fixed camera
         if (lock_cam) {
-            camPos(chassis[0]);
+            camPos(chassis1[0]);
         }
     }
 
     dsSetColor(0, 1, 1);
     dsSetTexture(DS_WOOD);
     dReal sides[3] = { LENGTH,WIDTH,HEIGHT };
-    dsDrawBox(dBodyGetPosition(chassis[0]), dBodyGetRotation(chassis[0]), sides);
-    dsSetColor(1, 1, 1);
-    for (i = 0; i <= 3; i++) dsDrawCylinder(dBodyGetPosition(roues[i]),
-        dBodyGetRotation(roues[i]), 0.08f, RADIUS);
 
+    //Draw buggy 1
+    drawBuggy(chassis1, roues1, sides);
+    //Draw buggy 2
+    drawBuggy(chassis2, roues2, sides);
+
+    // draw the cannon
+    /*dMatrix3 R2, R3, R4;
+    dRFromAxisAndAngle(R2, 0, 0, 1, cannon_angle);
+    dRFromAxisAndAngle(R3, 0, 1, 0, cannon_elevation);
+    dMultiply0(R4, R2, R3, 3, 3, 3);
+    dReal cpos[3] = { 1,1,1 };
+    for (i = 0; i < 3; i++) cpos[i] -=2  * R4[i * 1];
+    dsDrawCylinder(cpos, R4, 0.33, 0.5);
+
+    // draw the cannon ball
+    dsDrawSphere(dBodyGetPosition(cannon_ball_body), dBodyGetRotation(cannon_ball_body),
+        CANNON_BALL_RADIUS);
+  */
     dVector3 ss;
     dGeomBoxGetLengths(ground_box, ss);
     dsDrawBox(dGeomGetPosition(ground_box), dGeomGetRotation(ground_box), ss);
 
 }
 
-
-int main(int argc, char** argv)
-{
+void createABuggy(dBodyID* chassis, dBodyID* roues, dJointID* jointChassis_roues, dSpaceID car_space, dGeomID* box, dGeomID* sphere, dMass m, int x, int y, int z) {
     int i;
-    dMass m;
-
-    // setup pointers to drawstuff callback functions
-    dsFunctions fn;
-    fn.version = DS_VERSION;
-    fn.start = &start;
-    fn.step = &simLoop;
-    fn.command = &command;
-    fn.stop = 0;
-    fn.path_to_textures = DRAWSTUFF_TEXTURE_PATH;
-
-    // create world
-    dInitODE2(0);
-    world = dWorldCreate();
-    space = dHashSpaceCreate(0);
-    contactgroup = dJointGroupCreate(0);
-    dWorldSetGravity(world, 0, 0, -0.98);
-    ground = dCreatePlane(space, 0, 0, 1, 0);
-
     // chassis body
     chassis[0] = dBodyCreate(world);
-    dBodySetPosition(chassis[0], 0, 0, STARTZ);
+    dBodySetPosition(chassis[0], x, y, z);
     dMassSetBox(&m, 1, LENGTH, WIDTH, HEIGHT);
     dMassAdjust(&m, CMASS);
     dBodySetMass(chassis[0], &m);
@@ -352,12 +365,12 @@ int main(int argc, char** argv)
         sphere[i] = dCreateSphere(0, RADIUS);
         dGeomSetBody(sphere[i], roues[i]);
     }
-    dBodySetPosition(roues[0], 0.5 * LENGTH, WIDTH * 0.6, STARTZ - HEIGHT * 0.5);
-    dBodySetPosition(roues[1], 0.5 * LENGTH, -WIDTH * 0.6, STARTZ - HEIGHT * 0.5);
-    dBodySetPosition(roues[2], -0.5 * LENGTH, WIDTH * 0.6, STARTZ - HEIGHT * 0.5);
-    dBodySetPosition(roues[3], -0.5 * LENGTH, -WIDTH * 0.6, STARTZ - HEIGHT * 0.5);
+    dBodySetPosition(roues[0], 0.5 * LENGTH + x, WIDTH * 0.6 + y, z - HEIGHT * 0.5);
+    dBodySetPosition(roues[1], 0.5 * LENGTH + x, -WIDTH * 0.6 + y, z - HEIGHT * 0.5);
+    dBodySetPosition(roues[2], -0.5 * LENGTH + x, WIDTH * 0.6 + y, z - HEIGHT * 0.5);
+    dBodySetPosition(roues[3], -0.5 * LENGTH + x, -WIDTH * 0.6 + y, z - HEIGHT * 0.5);
 
-    // front and back wheel hinges
+    // front and back wheel hinges 
     for (i = 0; i <= 3; i++) {
         jointChassis_roues[i] = dJointCreateHinge2(world, 0);
         dJointAttach(jointChassis_roues[i], chassis[0], roues[i]);
@@ -366,7 +379,7 @@ int main(int argc, char** argv)
         dJointSetHinge2Axes(jointChassis_roues[i], zunit, yunit);
     }
 
-    // set joint suspension
+    // set joint suspension 
     for (i = 0; i < 4; i++) {
         dJointSetHinge2Param(jointChassis_roues[i], dParamSuspensionERP, 0.4);
         dJointSetHinge2Param(jointChassis_roues[i], dParamSuspensionCFM, 0.8);
@@ -391,6 +404,42 @@ int main(int argc, char** argv)
     dSpaceAdd(car_space, sphere[1]);
     dSpaceAdd(car_space, sphere[2]);
     dSpaceAdd(car_space, sphere[3]);
+}
+
+int main(int argc, char** argv)
+{
+    int i;
+    dMass m;
+
+    // setup pointers to drawstuff callback functions
+    dsFunctions fn;
+    fn.version = DS_VERSION;
+    fn.start = &start;
+    fn.step = &simLoop;
+    fn.command = &command;
+    fn.stop = 0;
+    fn.path_to_textures = DRAWSTUFF_TEXTURE_PATH;
+
+    // create world
+    dInitODE2(0);
+    world = dWorldCreate();
+    space = dHashSpaceCreate(0);
+    contactgroup = dJointGroupCreate(0);
+    dWorldSetGravity(world, 0, 0, -0.98);
+    ground = dCreatePlane(space, 0, 0, 1, 0);
+
+    createABuggy(chassis1,roues1,jointChassis_roues1,car_space1,box1,sphere1,m,-8,0,STARTZ);
+    createABuggy(chassis2, roues2, jointChassis_roues2, car_space2, box2, sphere2, m, -5, 0, STARTZ);
+
+    // cannon
+    /*
+    cannon_ball_body = dBodyCreate(world);
+    cannon_ball_geom = dCreateSphere(space, CANNON_BALL_RADIUS);
+    dMassSetSphereTotal(&m, CANNON_BALL_MASS, CANNON_BALL_RADIUS);
+    dBodySetMass(cannon_ball_body, &m);
+    dGeomSetBody(cannon_ball_geom, cannon_ball_body);
+    dBodySetPosition(cannon_ball_body, 2, 2, CANNON_BALL_RADIUS);
+    */
 
     // environment
     ground_box = dCreateBox(space, 2, 1.5, 1);
@@ -402,11 +451,19 @@ int main(int argc, char** argv)
     // run simulation
     dsSimulationLoop(argc, argv, 1000, 800, &fn);
 
-    dGeomDestroy(box[0]);
-    dGeomDestroy(sphere[0]);
-    dGeomDestroy(sphere[1]);
-    dGeomDestroy(sphere[2]);
-    dGeomDestroy(sphere[3]);
+    dGeomDestroy(box1[0]);
+    dGeomDestroy(sphere1[0]);
+    dGeomDestroy(sphere1[1]);
+    dGeomDestroy(sphere1[2]);
+    dGeomDestroy(sphere1[3]);
+
+    dGeomDestroy(box2[0]);
+    dGeomDestroy(sphere2[0]);
+    dGeomDestroy(sphere2[1]);
+    dGeomDestroy(sphere2[2]);
+    dGeomDestroy(sphere2[3]);
+
+    dGeomDestroy(ground_box);
     dJointGroupDestroy(contactgroup);
     dSpaceDestroy(space);
     dWorldDestroy(world);
