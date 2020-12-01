@@ -50,10 +50,10 @@
 
 // some constants
 
-#define LENGTH 2	// chassis length
-#define WIDTH 1	// chassis width
-#define HEIGHT 0.7	// chassis height
-#define RADIUS 0.6	// wheel radius
+#define LENGTH 0.7	// chassis length
+#define WIDTH 0.5	// chassis width
+#define HEIGHT 0.2	// chassis height
+#define RADIUS 0.3	// wheel radius
 #define CMASS 1		// chassis mass
 #define WMASS 0.2	// wheel mass
 #define STARTX1 -5   //Start x of chassis 1
@@ -483,10 +483,10 @@ void createABuggy(dBodyID* chassis, dBodyID* roues,dBodyID* turrbody, dJointID* 
         sphere[i] = dCreateSphere(0, RADIUS);
         dGeomSetBody(sphere[i], roues[i]);
     }
-    dBodySetPosition(roues[0], 0.5 * LENGTH + x, WIDTH * 0.6 + y, z);
-    dBodySetPosition(roues[1], 0.5 * LENGTH + x, -WIDTH * 0.6 + y, z);
-    dBodySetPosition(roues[2], -0.5 * LENGTH + x, WIDTH * 0.6 + y, z);
-    dBodySetPosition(roues[3], -0.5 * LENGTH + x, -WIDTH * 0.6 + y, z);
+    dBodySetPosition(roues[0], 0.5 * LENGTH + x, WIDTH * 0.6 + y, z - HEIGHT * 0.5);
+    dBodySetPosition(roues[1], 0.5 * LENGTH + x, -WIDTH * 0.6 + y, z - HEIGHT * 0.5);
+    dBodySetPosition(roues[2], -0.5 * LENGTH + x, WIDTH * 0.6 + y, z - HEIGHT * 0.5);
+    dBodySetPosition(roues[3], -0.5 * LENGTH + x, -WIDTH * 0.6 + y, z - HEIGHT * 0.5);
 
     //turet body
     turrbody[0] = dBodyCreate(world);
