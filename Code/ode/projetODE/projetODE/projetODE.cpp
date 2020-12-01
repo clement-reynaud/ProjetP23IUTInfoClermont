@@ -58,6 +58,11 @@
 #define CMASS 1		// chassis mass
 #define WMASS 0.2	// wheel mass
 
+#define SPHERERADIUS 0.4 // sphere radius
+//turret
+#define TURRRADIUS    0.15
+#define TURRLENGTH    0.6
+
 static const dVector3 yunit = { 0, 1, 0 }, zunit = { 0, 0, 1 };
 
 
@@ -76,8 +81,13 @@ static dGeomID box[1];
 static dGeomID sphere[4];
 static dGeomID ground_box;
 static dGeomID ground_box2;
-
-
+//shere :
+static dBodyID sphbody;
+static dGeomID sphgeom;
+//turret
+static dBodyID turrbody[1];
+static dGeomID turrgeom;
+static dJointID joint_turr;
 // things that the user controls
 
 static dReal speed = 0, steer = 0;	// user commands
@@ -89,12 +99,13 @@ static bool lock_cam = true;
 static void nearCallback(void*, dGeomID o1, dGeomID o2)
 {
     int i, n;
-
+    // Pour prendre en compte toutes les collisisons, commenter les 3 lignes ci dessous
+    /* 
     // only collide things with the ground
     int g1 = (o1 == ground || o1 == ground_box || o1 == ground_box2 );
     int g2 = (o2 == ground || o2 == ground_box || o2 == ground_box2 );
     if (!(g1 ^ g2)) return;
-
+    */
     const int N = 10;
     dContact contact[N];
     n = dCollide(o1, o2, N, &contact[0].geom, sizeof(dContact));
@@ -274,14 +285,6 @@ static void simLoop(int pause)
         dJointSetHinge2Param(jointChassis_roues[1], dParamFudgeFactor, 0.1);
 
 
-        //view 
-        //Mettre a jour la vue (pour qu'elle suive le robot)
-
-        /* tests
-        dBodyGetPosition(body[0]);
-        static float xyz[3] = { 0.8317f,-0.9817f,0.8000f };
-        static float hpr[3] = { 121.0000f,-27.5000f,0.0000f };
-        */
 
         dSpaceCollide(space, 0, &nearCallback);
         dWorldStep(world, 0.05);
@@ -311,6 +314,31 @@ static void simLoop(int pause)
     dGeomBoxGetLengths(ground_box2, ss2);
     dsDrawBox(dGeomGetPosition(ground_box2), dGeomGetRotation(ground_box2), ss2);
 
+
+    //sphere
+    const dReal* SPos = dBodyGetPosition(sphbody);
+    const dReal* SRot = dBodyGetRotation(sphbody);
+    const double spos[3] = { SPos[0], SPos[1], SPos[2] };
+    const double srot[12] = { SRot[0], SRot[1], SRot[2], SRot[3], SRot[4], SRot[5], SRot[6], SRot[7], SRot[8], SRot[9], SRot[10], SRot[11] };
+    dsDrawSphere
+    (
+        spos,
+        srot,
+        SPHERERADIUS
+    ); // single precision
+
+    //turret
+    const dReal* CPos = dBodyGetPosition(turrbody[0]);
+    const dReal* CRot = dBodyGetRotation(turrbody[0]);
+    const double cpos[3] = { CPos[0], CPos[1], CPos[2] };
+    const double crot[12] = { CRot[0], CRot[1], CRot[2], CRot[3], CRot[4], CRot[5], CRot[6], CRot[7], CRot[8], CRot[9], CRot[10], CRot[11] };
+    dsDrawCylinder
+    (
+        cpos,
+        crot,
+        TURRLENGTH,
+        TURRRADIUS
+    ); // single precision
 }
 
 
@@ -362,6 +390,7 @@ int main(int argc, char** argv)
     dBodySetPosition(roues[2], -0.5 * LENGTH, WIDTH * 0.6, STARTZ - HEIGHT * 0.5);
     dBodySetPosition(roues[3], -0.5 * LENGTH, -WIDTH * 0.6, STARTZ - HEIGHT * 0.5);
 
+
     // front and back wheel hinges
     for (i = 0; i <= 3; i++) {
         jointChassis_roues[i] = dJointCreateHinge2(world, 0);
@@ -370,6 +399,9 @@ int main(int argc, char** argv)
         dJointSetHinge2Anchor(jointChassis_roues[i], a[0], a[1], a[2]);
         dJointSetHinge2Axes(jointChassis_roues[i], zunit, yunit);
     }
+
+    
+    
 
     // set joint suspension
     for (i = 0; i < 4; i++) {
@@ -411,7 +443,33 @@ int main(int argc, char** argv)
     dGeomSetPosition(ground_box2, 100,0, -0.47);
     dGeomSetRotation(ground_box2, R2);
 
+    // sphere
+    sphbody = dBodyCreate(world);
+    dMassSetSphere(&m, 0.2, SPHERERADIUS);
+    dBodySetMass(sphbody, &m);
+    sphgeom = dCreateSphere(0, SPHERERADIUS);
+    dGeomSetBody(sphgeom, sphbody);
+    dBodySetPosition(sphbody, 0, 0, 5.5);
+    dSpaceAdd(space, sphgeom);
 
+    //TURRET
+    turrbody[0] = dBodyCreate(world);
+    dQuaternion q;
+    dQFromAxisAndAngle(q, 1, 0, 0, M_PI * -0.77);
+    dBodySetQuaternion(turrbody[0], q);
+    dMassSetCylinder(&m, 1.0, 3, TURRRADIUS, TURRLENGTH);
+    dBodySetMass(turrbody[0], &m);
+    turrgeom = dCreateCylinder(0, TURRRADIUS, TURRLENGTH);
+    dGeomSetBody(turrgeom, turrbody[0]);
+    dBodySetPosition(turrbody[0], 0,0, STARTZ + HEIGHT );
+    dSpaceAdd(space, turrgeom);
+
+    // joint turret
+    joint_turr = dJointCreateHinge2(world, 0);
+    dJointAttach(joint_turr, chassis[0], turrbody[0]);
+    const dReal* a = dBodyGetPosition(turrbody[0]);
+    dJointSetHinge2Anchor(joint_turr, a[0], a[1], a[2]);
+    dJointSetHinge2Axes(joint_turr, zunit, yunit);
 
 
     // run simulation
@@ -422,8 +480,14 @@ int main(int argc, char** argv)
     dGeomDestroy(sphere[1]);
     dGeomDestroy(sphere[2]);
     dGeomDestroy(sphere[3]);
+
+    dGeomDestroy(sphgeom);
+
     dJointGroupDestroy(contactgroup);
     dSpaceDestroy(space);
+
+    
+
     dWorldDestroy(world);
     dCloseODE();
     return 0;
