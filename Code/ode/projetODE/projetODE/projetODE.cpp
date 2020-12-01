@@ -99,7 +99,13 @@ static dGeomID ground_box;
 // things that the user controls
 
 static dReal speed = 0, steer = 0;	// user commands
-static bool lock_cam = true;
+dReal speedBuggy1 = 0;
+dReal speedBuggy2 = 0;
+dReal steerBuggy1 = 0;
+dReal steerBuggy2 = 0;
+
+static bool lock_cam1 = true;
+static bool lock_cam2 = false;
 static dReal cannon_angle = 0, cannon_elevation = -1.2;
 
 // this is called by dSpaceCollide when two objects in space are
@@ -108,11 +114,6 @@ static dReal cannon_angle = 0, cannon_elevation = -1.2;
 static void nearCallback(void*, dGeomID o1, dGeomID o2)
 {
     int i, n;
-
-    // only collide things with the ground
-    int g1 = (o1 == ground || o1 == ground_box /*|| o1 == box1[0] || o1 == box2[0] || o1 == sphere1[0] || o1 == sphere1[1] || o1 == sphere1[2] || o1 == sphere1[3] || o1 == sphere2[0] || o1 == sphere2[1] || o1 == sphere2[2] || o1 == sphere2[3]*/);
-    int g2 = (o2 == ground || o2 == ground_box /*|| o2 == box1[0] || o2 == box2[0] || o2 == sphere1[0] || o2 == sphere1[1] || o2 == sphere1[2] || o2 == sphere1[3] || o2 == sphere2[0] || o2 == sphere2[1] || o2 == sphere2[2] || o2 == sphere2[3]*/);
-    if (!(g1 ^ g2)) return;
 
     const int N = 10;
     dContact contact[N];
@@ -133,7 +134,35 @@ static void nearCallback(void*, dGeomID o1, dGeomID o2)
         }
     }
 }
+/*
+static void nearCallback(void*, dGeomID o1, dGeomID o2) {
+    int i, n;
 
+    dBodyID b1 = dGeomGetBody(o1);
+    dBodyID b2 = dGeomGetBody(o2);
+    if (b1 && b2 && dAreConnected(b1, b2))
+        return;
+
+    const int N = 50;
+    dContact contact[N];
+    n = dCollide(o1, o2, N, &contact[0].geom, sizeof(dContact));
+    if (n > 0) {
+        for (i = 0; i < n; i++) {
+            contact[i].surface.mode = dContactSlip1 | dContactSlip2 | dContactSoftERP | dContactSoftCFM | dContactApprox1;
+            if (dGeomGetClass(o1) == dSphereClass || dGeomGetClass(o2) == dSphereClass)
+                contact[i].surface.mu = 20;
+            else
+                contact[i].surface.mu = 0.5;
+            contact[i].surface.slip1 = 0.0;
+            contact[i].surface.slip2 = 0.0;
+            contact[i].surface.soft_erp = 0.8;
+            contact[i].surface.soft_cfm = 0.01;
+            dJointID c = dJointCreateContact(world, contactgroup, contact + i);
+            dJointAttach(c, dGeomGetBody(o1), dGeomGetBody(o2));
+        }
+    }
+}
+*/
 
 // start simulation - set viewpoint
 
@@ -149,11 +178,16 @@ static void start()
         "\t's' to decrease speed.\n"
         "\t'q' to steer left.\n"
         "\t'd' to steer right.\n"
+        "\t'l' to lock the camera or to unlock it.\n"
         "\t' ' to reset speed and steering.\n"
+        "\tUse caps to control the second buggy.\n"
+        "\t'5' to turn the buggy over.\n"
+        "\t'6' to turn the second buggy over.\n"
         "\t'1' to save the current state to 'state.dif'.\n"
-        "\t'2' to lower the cannon.\n"
+        /*"\t'2' to lower the cannon.\n"
         "\t'3' to raise the cannon.\n"
         "\t'4' to fire with the cannon.\n"
+        */
     );
 }
 
@@ -224,24 +258,49 @@ void retourner(dBodyID obj_body) {
 static void command(int cmd)
 {
     switch (cmd) {
-    case 'z': case 'Z':
-        if (!(speed >= 3.3)) {
-            speed += 0.3;
+    case 'z':
+        if (!(speedBuggy1 >= 3.3)) {
+            speedBuggy1 += 0.3;
         }
         break;
-    case 's': case 'S':
-        if (!(speed <= -3.3)) {
-            speed -= 0.3;
+    case 'Z':
+        if (!(speedBuggy2 >= 3.3)) {
+            speedBuggy2 += 0.3;
         }
         break;
-    case 'q': case 'Q':
-        steer -= 0.3;
+    case 's':
+        if (!(speedBuggy1 <= -3.3)) {
+            speedBuggy1 -= 0.3;
+        }
         break;
-    case 'd': case 'D':
-        steer += 0.3;
+    case 'S':
+        if (!(speedBuggy2 <= -3.3)) {
+            speedBuggy2 -= 0.3;
+        }
         break;
-    case 'l': case 'L':
-        lock_cam = !lock_cam;
+    case 'q':
+        steerBuggy1 -= 0.3;
+        break;
+    case 'Q' :
+        steerBuggy2 -= 0.3;
+        break;
+    case 'd':
+        steerBuggy1 += 0.3;
+        break;
+    case 'D' :
+        steerBuggy2 += 0.3;
+        break;
+    case 'l':
+        if (lock_cam2 == true) {
+            lock_cam2 = false;
+        }
+        lock_cam1 = !lock_cam1;
+        break;
+    case 'L':
+        if (lock_cam1 == true) {
+            lock_cam1 = false;
+        }
+        lock_cam2 = !lock_cam2;
         break;
     case '5':
         retourner(chassis1[0]);
@@ -249,8 +308,11 @@ static void command(int cmd)
     case '6':
         retourner(chassis2[0]);
     case ' ':
-        speed = 0;
-        steer = 0;
+        speedBuggy1 = 0;
+        steerBuggy1 = 0;
+        speedBuggy2 = 0;
+        steerBuggy2 = 0;
+
         break;
     case '1': {
         FILE* f = fopen("state.dif", "wt");
@@ -262,14 +324,14 @@ static void command(int cmd)
     }
 }
 
-void speedAndSteer(dJointID jointChassis_roues) {
-    dJointSetHinge2Param(jointChassis_roues, dParamVel2, -speed);
+void speedAndSteer(dJointID jointChassis_roues,dReal speedBuggy, dReal steerBuggy) {
+    dJointSetHinge2Param(jointChassis_roues, dParamVel2, -speedBuggy);
     dJointSetHinge2Param(jointChassis_roues, dParamFMax2, 0.1);
-    dReal v = steer - dJointGetHinge2Angle1(jointChassis_roues);
-    if (v > 0.1) v = 0.1;
-    if (v < -0.1) v = -0.1;
-    v *= 10.0;
-    dJointSetHinge2Param(jointChassis_roues, dParamVel, v);
+    dReal s = steerBuggy - dJointGetHinge2Angle1(jointChassis_roues);
+    if (s > 0.1) s = 0.1;
+    if (s < -0.1) s = -0.1;
+    s *= 10.0;
+    dJointSetHinge2Param(jointChassis_roues, dParamVel, s);
     dJointSetHinge2Param(jointChassis_roues, dParamFMax, 0.2);
     dJointSetHinge2Param(jointChassis_roues, dParamLoStop, -0.75);
     dJointSetHinge2Param(jointChassis_roues, dParamHiStop, 0.75);
@@ -288,10 +350,10 @@ static void simLoop(int pause)
 {
     int i;
     if (!pause) {
-        speedAndSteer(jointChassis_roues1[0]);
-        speedAndSteer(jointChassis_roues1[1]);
-        speedAndSteer(jointChassis_roues2[0]);
-        speedAndSteer(jointChassis_roues2[1]);
+        speedAndSteer(jointChassis_roues1[0], speedBuggy1, steerBuggy1);
+        speedAndSteer(jointChassis_roues1[1], speedBuggy1, steerBuggy1);
+        speedAndSteer(jointChassis_roues2[0], speedBuggy2, steerBuggy2);
+        speedAndSteer(jointChassis_roues2[1], speedBuggy2, steerBuggy2);
 
         //view 
         //Mettre a jour la vue (pour qu'elle suive le robot)
@@ -309,8 +371,11 @@ static void simLoop(int pause)
         dJointGroupEmpty(contactgroup);
 
         // fixed or not-fixed camera
-        if (lock_cam) {
+        if (lock_cam1) {
             camPos(chassis1[0]);
+        }
+        if (lock_cam2) {
+            camPos(chassis2[0]);
         }
     }
 
@@ -335,7 +400,7 @@ static void simLoop(int pause)
     // draw the cannon ball
     dsDrawSphere(dBodyGetPosition(cannon_ball_body), dBodyGetRotation(cannon_ball_body),
         CANNON_BALL_RADIUS);
-  */
+    */
     dVector3 ss;
     dGeomBoxGetLengths(ground_box, ss);
     dsDrawBox(dGeomGetPosition(ground_box), dGeomGetRotation(ground_box), ss);
@@ -436,8 +501,8 @@ int main(int argc, char** argv)
     dWorldSetGravity(world, 0, 0, -0.98);
     ground = dCreatePlane(space, 0, 0, 1, 0);
 
-    createABuggy(chassis1,roues1,jointChassis_roues1,car_space1,box1,sphere1,m,-8,0,STARTZ);
-    createABuggy(chassis2, roues2, jointChassis_roues2, car_space2, box2, sphere2, m, -5, 0, STARTZ);
+    createABuggy(chassis1,roues1,jointChassis_roues1,car_space1,box1,sphere1,m,-5,0,STARTZ);
+    createABuggy(chassis2, roues2, jointChassis_roues2, car_space2, box2, sphere2, m, -8, 0, STARTZ);
 
     // cannon
     /*
