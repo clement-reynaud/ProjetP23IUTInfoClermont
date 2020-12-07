@@ -447,22 +447,30 @@ static void simLoop(int pause)
         }
 
         if (lock_cam2) {
-            camPos(buggy[0].chassis[0]);
+            camPos(buggy[1].chassis[0]);
         }
     }
+    dReal sides[3] = { LENGTH,WIDTH,HEIGHT };
 
     dsSetColor(0, 1, 1);
     dsSetTexture(DS_WOOD);
-    dReal sides[3] = { LENGTH,WIDTH,HEIGHT };
-
     //Draw buggy 1 & 2
     drawBuggy(buggy[0].chassis, buggy[0].roues, buggy[0].turrbody, sides);
+    dsSetColor(1, 0, 0);
+    dsSetTexture(DS_WOOD);
     drawBuggy(buggy[1].chassis, buggy[1].roues, buggy[1].turrbody, sides);
-
+    dsSetColor(0, 1, 0);
+    dsSetTexture(DS_WOOD);
     //Draw buggy 3, 4, 5 & 6
     drawBuggy(buggy[2].chassis, buggy[2].roues, buggy[2].turrbody, sides);
+    dsSetColor(0, 0, 1);
+    dsSetTexture(DS_WOOD);
     drawBuggy(buggy[3].chassis, buggy[3].roues, buggy[3].turrbody, sides);
+    dsSetColor(1, 1, 0);
+    dsSetTexture(DS_WOOD);
     drawBuggy(buggy[4].chassis, buggy[4].roues, buggy[4].turrbody, sides);
+    dsSetColor(1, 0, 1);
+    dsSetTexture(DS_WOOD);
     drawBuggy(buggy[5].chassis, buggy[5].roues, buggy[5].turrbody, sides);
 
     // draw the cannon
