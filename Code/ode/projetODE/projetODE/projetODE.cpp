@@ -70,33 +70,43 @@
 #define CANNON_BALL_MASS 0.1	// mass of the cannon ball
 #define CANNON_BALL_RADIUS 0.05 // size of the cannon ball
 
+typedef struct buggy{
+    dBodyID chassis[1];
+    dBodyID roues[4];
+    dJointID jointChassis_roues[4];
+    dSpaceID car_space;
+    dGeomID box[1];
+    dGeomID sphere[4];
+
+    //for the canon 
+    dBodyID turrbody[1];
+    dGeomID turrgeom[1];
+    dJointID joint_turr[1];
+}Buggy;
 
 static const dVector3 yunit = { 0, 1, 0 }, zunit = { 0, 0, 1 };
 
-
 // dynamics and collision objects (chassis, 4 wheels, environment)
-
-static dWorldID world;
-static dSpaceID space;
+/*
 static dBodyID chassis1[1];
-//static dJointID jointChassis[1];	// joint[0] is the front wheel
 static dBodyID roues1[4];
+static dJointID jointChassis_roues1[4]; // jointChassis_roues[0] & jointChassis_roues[1] are the front wheels
+static dSpaceID car_space1;
+static dGeomID box1[1]; //Box of the chassis 1
+static dGeomID sphere1[4]; //Sphere of wheels 1
+
 static dBodyID chassis2[1];
 static dBodyID roues2[4];
-static dJointID jointChassis_roues1[4]; // jointChassis_roues[0] & jointChassis_roues[1] are the front wheels
 static dJointID jointChassis_roues2[4];
+static dSpaceID car_space2;
+static dGeomID box2[1]; //Box of the chassis 2
+static dGeomID sphere2[4]; //Sphere of wheels 2
+
 static dJointID jointChassis_cannon[2];
 static dJointID jointCannon[2]; // The cannon is composed of a box and a cylinder
+
 static dGeomID cannon_ball_geom;
 static dBodyID cannon_ball_body;
-static dJointGroupID contactgroup;
-static dGeomID ground;
-static dSpaceID car_space1;
-static dSpaceID car_space2;
-static dGeomID box1[1]; //Box of the chassis 1
-static dGeomID box2[1]; //Box of the chassis 2
-static dGeomID sphere1[4]; //Sphere of wheels 1
-static dGeomID sphere2[4]; //Sphere of wheels 2
 
 //for the canon 
 static dBodyID turrbody1[1];
@@ -105,7 +115,13 @@ static dJointID joint_turr1[1];
 static dBodyID turrbody2[1];
 static dGeomID turrgeom2[1];
 static dJointID joint_turr2[1];
+*/
+Buggy buggy[6];
+static dWorldID world;
+static dSpaceID space;
+static dJointGroupID contactgroup;
 static dGeomID ground_box;
+static dGeomID ground;
 
 /*
 //turret
@@ -349,10 +365,10 @@ static void command(int cmd)
         lock_cam2 = !lock_cam2;
         break;
     case '5':
-        retourner(chassis1[0]);
+        retourner(buggy[0].chassis[0]);
         break;
     case '6':
-        retourner(chassis2[0]);
+        retourner(buggy[1].chassis[0]);
     case ' ':
         speedBuggy1 = 0;
         steerBuggy1 = 0;
@@ -391,11 +407,13 @@ void drawBuggy(dBodyID* chassis, dBodyID* roues, dBodyID* turrbody, dReal* sides
         dBodyGetRotation(roues[i]), 0.2f, RADIUS);
     
     //turret
+    /*
     const dReal* CPos = dBodyGetPosition(turrbody[0]);
     const dReal* CRot = dBodyGetRotation(turrbody[0]);
     const double cpos[3] = { CPos[0], CPos[1], CPos[2] };
     const double crot[12] = { CRot[0], CRot[1], CRot[2], CRot[3], CRot[4], CRot[5], CRot[6], CRot[7], CRot[8], CRot[9], CRot[10], CRot[11] };
     dsDrawCylinder(cpos, crot, TURRLENGTH, TURRRADIUS);
+    */
 }
 
 // simulation loop
@@ -403,10 +421,10 @@ static void simLoop(int pause)
 {
     int i;
     if (!pause) {
-        speedAndSteer(jointChassis_roues1[0], speedBuggy1, steerBuggy1);
-        speedAndSteer(jointChassis_roues1[1], speedBuggy1, steerBuggy1);
-        speedAndSteer(jointChassis_roues2[0], speedBuggy2, steerBuggy2);
-        speedAndSteer(jointChassis_roues2[1], speedBuggy2, steerBuggy2);
+        speedAndSteer(buggy[0].jointChassis_roues[0], speedBuggy1, steerBuggy1);
+        speedAndSteer(buggy[0].jointChassis_roues[1], speedBuggy1, steerBuggy1);
+        speedAndSteer(buggy[1].jointChassis_roues[0], speedBuggy2, steerBuggy2);
+        speedAndSteer(buggy[1].jointChassis_roues[1], speedBuggy2, steerBuggy2);
 
         //view 
         //Mettre a jour la vue (pour qu'elle suive le robot)
@@ -425,10 +443,11 @@ static void simLoop(int pause)
 
         // fixed or not-fixed camera
         if (lock_cam1) {
-            camPos(chassis1[0]);
+            camPos(buggy[0].chassis[0]);
         }
+
         if (lock_cam2) {
-            camPos(chassis2[0]);
+            camPos(buggy[0].chassis[0]);
         }
     }
 
@@ -436,10 +455,15 @@ static void simLoop(int pause)
     dsSetTexture(DS_WOOD);
     dReal sides[3] = { LENGTH,WIDTH,HEIGHT };
 
-    //Draw buggy 1
-    drawBuggy(chassis1, roues1, turrbody1, sides);
-    //Draw buggy 2
-    drawBuggy(chassis2, roues2, turrbody2, sides);
+    //Draw buggy 1 & 2
+    drawBuggy(buggy[0].chassis, buggy[0].roues, buggy[0].turrbody, sides);
+    drawBuggy(buggy[1].chassis, buggy[1].roues, buggy[1].turrbody, sides);
+
+    //Draw buggy 3, 4, 5 & 6
+    drawBuggy(buggy[2].chassis, buggy[2].roues, buggy[2].turrbody, sides);
+    drawBuggy(buggy[3].chassis, buggy[3].roues, buggy[3].turrbody, sides);
+    drawBuggy(buggy[4].chassis, buggy[4].roues, buggy[4].turrbody, sides);
+    drawBuggy(buggy[5].chassis, buggy[5].roues, buggy[5].turrbody, sides);
 
     // draw the cannon
     /*dMatrix3 R2, R3, R4;
@@ -489,7 +513,7 @@ void createABuggy(dBodyID* chassis, dBodyID* roues,dBodyID* turrbody, dJointID* 
     dBodySetPosition(roues[3], -0.5 * LENGTH + x, -WIDTH * 0.6 + y, z - HEIGHT * 0.5);
 
     //turet body
-    turrbody[0] = dBodyCreate(world);
+    /*turrbody[0] = dBodyCreate(world);
     dQuaternion q;
     dQFromAxisAndAngle(q, 1, 0, 0, M_PI * -0.77);
     dBodySetQuaternion(turrbody[0], q);
@@ -497,7 +521,7 @@ void createABuggy(dBodyID* chassis, dBodyID* roues,dBodyID* turrbody, dJointID* 
     dBodySetMass(turrbody[0], &m);
     turrgeom[0] = dCreateCylinder(0, TURRRADIUS, TURRLENGTH);
     dGeomSetBody(turrgeom[0], turrbody[0]);
-    dBodySetPosition(turrbody[0], x, y, z + HEIGHT);
+    dBodySetPosition(turrbody[0], x, y, z + HEIGHT);*/
 
     // front and back wheel hinges 
     for (i = 0; i <= 3; i++) {
@@ -526,14 +550,14 @@ void createABuggy(dBodyID* chassis, dBodyID* roues,dBodyID* turrbody, dJointID* 
     }
 
     // joint turret
-    joint_turr[0] = dJointCreateHinge2(world, 0);
+    /*joint_turr[0] = dJointCreateHinge2(world, 0);
     dJointAttach(joint_turr[0], chassis[0], turrbody[0]);
     const dReal* a = dBodyGetPosition(turrbody[0]);
     dJointSetHinge2Anchor(joint_turr[0], a[0], a[1], a[2]);
     dJointSetHinge2Axes(joint_turr[0], zunit, yunit);
     dJointSetHinge2Param(joint_turr[0], dParamLoStop, 0);
     dJointSetHinge2Param(joint_turr[0], dParamHiStop, 0);
-
+    */
     // create car space and add it to the top level space
     car_space = dSimpleSpaceCreate(space);
     dSpaceSetCleanup(car_space, 0);
@@ -542,7 +566,8 @@ void createABuggy(dBodyID* chassis, dBodyID* roues,dBodyID* turrbody, dJointID* 
     dSpaceAdd(car_space, sphere[1]);
     dSpaceAdd(car_space, sphere[2]);
     dSpaceAdd(car_space, sphere[3]);
-    dSpaceAdd(space, turrgeom[0]);
+    //dSpaceAdd(space, turrgeom[0]);
+    
 }
 
 void destroyBuggy(dGeomID* box, dGeomID* sphere, dGeomID* turrgeom) {
@@ -551,7 +576,7 @@ void destroyBuggy(dGeomID* box, dGeomID* sphere, dGeomID* turrgeom) {
     dGeomDestroy(sphere[1]);
     dGeomDestroy(sphere[2]);
     dGeomDestroy(sphere[3]);
-    dGeomDestroy(turrgeom[0]);
+    //dGeomDestroy(turrgeom[0]);
 }
 
 int main(int argc, char** argv)
@@ -577,9 +602,12 @@ int main(int argc, char** argv)
     ground = dCreatePlane(space, 0, 0, 1, 0);
     //void createABuggy(dBodyID* chassis, dBodyID* roues,dBodyID* turrbody, dJointID* jointChassis_roues, dJointID* joint_turr, dSpaceID car_space, dGeomID* box, dGeomID* sphere, dGeomID* turrgeom, dMass m, int x, int y, int z) {
 
-    createABuggy(chassis1,roues1,turrbody1,jointChassis_roues1, joint_turr1,car_space1,box1,sphere1, turrgeom1,m,-5,0,STARTZ);
-    createABuggy(chassis2, roues2, turrbody2, jointChassis_roues2, joint_turr2, car_space2, box2, sphere2, turrgeom2, m, -8, 0, STARTZ);
-
+    createABuggy(buggy[0].chassis, buggy[0].roues, buggy[0].turrbody, buggy[0].jointChassis_roues, buggy[0].joint_turr, buggy[0].car_space, buggy[0].box, buggy[0].sphere, buggy[0].turrgeom,m,-5,0,STARTZ);
+    createABuggy(buggy[1].chassis, buggy[1].roues, buggy[1].turrbody, buggy[1].jointChassis_roues, buggy[1].joint_turr, buggy[1].car_space, buggy[1].box, buggy[1].sphere, buggy[1].turrgeom, m, -8, 0, STARTZ);
+    createABuggy(buggy[2].chassis, buggy[2].roues, buggy[2].turrbody, buggy[2].jointChassis_roues, buggy[2].joint_turr, buggy[2].car_space, buggy[2].box, buggy[2].sphere, buggy[2].turrgeom,m,-8,5,STARTZ);
+    createABuggy(buggy[3].chassis, buggy[3].roues, buggy[3].turrbody, buggy[3].jointChassis_roues, buggy[3].joint_turr, buggy[3].car_space, buggy[3].box, buggy[3].sphere, buggy[3].turrgeom, m, -8, -5, STARTZ);
+    createABuggy(buggy[4].chassis, buggy[4].roues, buggy[4].turrbody, buggy[4].jointChassis_roues, buggy[4].joint_turr, buggy[4].car_space, buggy[4].box, buggy[4].sphere, buggy[4].turrgeom, m, -8, 10, STARTZ);
+    createABuggy(buggy[5].chassis, buggy[5].roues, buggy[5].turrbody, buggy[5].jointChassis_roues, buggy[5].joint_turr, buggy[5].car_space, buggy[5].box, buggy[5].sphere, buggy[5].turrgeom, m, -8, -10, STARTZ);
     // cannon
     /*
     cannon_ball_body = dBodyCreate(world);
@@ -600,8 +628,12 @@ int main(int argc, char** argv)
     // run simulation
     dsSimulationLoop(argc, argv, 1000, 800, &fn);
 
-    destroyBuggy(box1,sphere1,turrgeom1);
-    destroyBuggy(box2,sphere2,turrgeom2);
+    destroyBuggy(buggy[0].box, buggy[0].sphere, buggy[0].turrgeom);
+    destroyBuggy(buggy[1].box, buggy[1].sphere, buggy[1].turrgeom);
+    destroyBuggy(buggy[2].box, buggy[2].sphere, buggy[2].turrgeom);
+    destroyBuggy(buggy[3].box, buggy[3].sphere, buggy[3].turrgeom);
+    destroyBuggy(buggy[4].box, buggy[4].sphere, buggy[4].turrgeom);
+    destroyBuggy(buggy[5].box, buggy[5].sphere, buggy[5].turrgeom);
 
     dGeomDestroy(ground_box);
     dJointGroupDestroy(contactgroup);
