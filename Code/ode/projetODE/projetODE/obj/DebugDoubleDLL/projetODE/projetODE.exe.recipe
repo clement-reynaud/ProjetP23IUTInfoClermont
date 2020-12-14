@@ -1,7 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project>
-  <ProjectOutputs>D:\Cours\Projet\ProjetP23IUTInfoClermont\Code\ode\lib\DebugDoubleDLL\projetODE.exe</ProjectOutputs>
-  <ContentFiles></ContentFiles>
-  <SatelliteDlls></SatelliteDlls>
-  <NonRecipeFileRefs></NonRecipeFileRefs>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\lib\DebugDoubleDLL\drawstuff.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\lib\DebugDoubleDLL\ode.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\lib\DebugDoubleDLL\projetODE.exe</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles />
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
 </Project>

@@ -38,7 +38,7 @@
   IceIndexedTriangle.cpp
   IceHPoint.cpp
   IceContainer.cpp
-D:\Cours\Projet\ProjetP23IUTInfoClermont\Code\ode\OPCODE\Ice\IceContainer.cpp(55,123): warning C4244: 'initialisation' : conversion de 'float' en 'udword', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\OPCODE\Ice\IceContainer.cpp(55,123): warning C4244: 'initialisation' : conversion de 'float' en 'udword', perte possible de données
   IceAABB.cpp
   util.cpp
   timer.cpp
@@ -107,9 +107,9 @@ D:\Cours\Projet\ProjetP23IUTInfoClermont\Code\ode\OPCODE\Ice\IceContainer.cpp(55
   collision_trimesh_trimesh_old.cpp
   collision_trimesh_trimesh.cpp
   collision_trimesh_sphere.cpp
-D:\Cours\Projet\ProjetP23IUTInfoClermont\Code\ode\ode\src\collision_trimesh_sphere.cpp(276,22): warning C4244: '=' : conversion de 'dReal' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\ode\src\collision_trimesh_sphere.cpp(276,22): warning C4244: '=' : conversion de 'dReal' en 'float', perte possible de données
   collision_trimesh_ray.cpp
-D:\Cours\Projet\ProjetP23IUTInfoClermont\Code\ode\ode\src\collision_trimesh_ray.cpp(59,25): warning C4244: 'argument' : conversion de 'dReal' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\ode\src\collision_trimesh_ray.cpp(59,25): warning C4244: 'argument' : conversion de 'dReal' en 'float', perte possible de données
   Génération de code en cours...
   Compilation en cours...
   collision_trimesh_plane.cpp
@@ -134,8 +134,8 @@ D:\Cours\Projet\ProjetP23IUTInfoClermont\Code\ode\ode\src\collision_trimesh_ray.
   Génération de code en cours...
 cl : ligne de commande warning D9035: l'option 'Gm' est déconseillée et sera supprimée dans une version ultérieure
   nextafterf.c
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(1316,5): warning MSB8012: TargetPath(D:\Cours\Projet\ProjetP23IUTInfoClermont\Code\ode\build\vs2008\..\..\lib\DebugDoubleDLL\ode.dll) ne correspond pas à la valeur de la propriété OutputFile (D:\Cours\Projet\ProjetP23IUTInfoClermont\Code\ode\lib\DebugDoubleDLL\ode_doubled.dll) de Linker. Cela peut entraîner une génération incorrecte de votre projet. Pour corriger ce problème, vérifiez que les valeurs des propriétés $(OutDir), $(TargetName) et $(TargetExt) correspondent à la valeur spécifiée dans %(Link.OutputFile).
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(1318,5): warning MSB8012: TargetName(ode) ne correspond pas à la valeur de la propriété OutputFile (ode_doubled) de Linker. Cela peut entraîner une génération incorrecte de votre projet. Pour corriger ce problème, vérifiez que les valeurs des propriétés $(OutDir), $(TargetName) et $(TargetExt) correspondent à la valeur spécifiée dans %(Link.OutputFile).
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(1341,5): warning MSB8012: TargetPath(C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\lib\DebugDoubleDLL\ode.dll) ne correspond pas à la valeur de la propriété OutputFile (C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\lib\DebugDoubleDLL\ode_doubled.dll) de Linker. Cela peut entraîner une génération incorrecte de votre projet. Pour corriger ce problème, vérifiez que les valeurs des propriétés $(OutDir), $(TargetName) et $(TargetExt) correspondent à la valeur spécifiée dans %(Link.OutputFile).
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(1343,5): warning MSB8012: TargetName(ode) ne correspond pas à la valeur de la propriété OutputFile (ode_doubled) de Linker. Cela peut entraîner une génération incorrecte de votre projet. Pour corriger ce problème, vérifiez que les valeurs des propriétés $(OutDir), $(TargetName) et $(TargetExt) correspondent à la valeur spécifiée dans %(Link.OutputFile).
 array.obj : warning LNK4075: ' /EDITANDCONTINUE' ignoré à cause de la spécification '/SAFESEH'
      Création de la bibliothèque ..\..\lib\DebugDoubleDLL\ode_doubled.lib et de l'objet ..\..\lib\DebugDoubleDLL\ode_doubled.exp
-  ode.vcxproj -> D:\Cours\Projet\ProjetP23IUTInfoClermont\Code\ode\build\vs2008\..\..\lib\DebugDoubleDLL\ode.dll
+  ode.vcxproj -> C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\lib\DebugDoubleDLL\ode.dll
