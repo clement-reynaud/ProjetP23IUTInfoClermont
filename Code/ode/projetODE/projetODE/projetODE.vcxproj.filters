@@ -7,10 +7,21 @@
     <Filter Include="ode\projetODE">
       <UniqueIdentifier>{fa0f0d10-bd98-48da-874b-dc675a214326}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ode\projetODE\mesh">
+      <UniqueIdentifier>{61b41cdf-6c40-4b7c-acd4-7ae4d25c3856}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="projetODE.cpp">
       <Filter>ode\projetODE</Filter>
     </ClCompile>
+    <ClCompile Include="meshSol.cpp">
+      <Filter>ode\projetODE\mesh</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="meshSol.h">
+      <Filter>ode\projetODE\mesh</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
