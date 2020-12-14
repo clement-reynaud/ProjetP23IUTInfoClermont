@@ -33,6 +33,10 @@
 #include "texturepath.h"
 #include "math.h"
 #include <cmath>
+#include "projetODE.h"
+#include <random>
+#include <algorithm>
+#include <iterator>
 
 #ifdef _MSC_VER
 #pragma warning(disable:4244 4305)  // for VC++, no precision loss complaints
@@ -45,6 +49,7 @@
 #define dsDrawSphere dsDrawSphereD
 #define dsDrawCylinder dsDrawCylinderD
 #define dsDrawCapsule dsDrawCapsuleD
+#define dsDrawTriangle dsDrawTriangleD
 #endif
 
 
@@ -57,7 +62,22 @@
 #define STARTZ 0.5	// starting height of chassis
 #define CMASS 1		// chassis mass
 #define WMASS 0.2	// wheel mass
+#define SPHERERADIUS 0.4
 
+// Heightfield dimensions
+
+#define HFIELD_WSTEP			30		// Vertex count along edge >= 2
+#define HFIELD_DSTEP			30
+
+#define HFIELD_WIDTH			REAL(20.0 )
+#define HFIELD_DEPTH			REAL(20.0 )
+
+#define HFIELD_WSAMP			( HFIELD_WIDTH / ( HFIELD_WSTEP-1 ) )
+#define HFIELD_DSAMP			( HFIELD_DEPTH / ( HFIELD_DSTEP-1 ) )
+
+#define	DEGTORAD			0.01745329251994329577f				//!< PI / 180.0, convert degrees to radians
+
+//
 static const dVector3 yunit = { 0, 1, 0 }, zunit = { 0, 0, 1 };
 
 
@@ -76,11 +96,44 @@ static dGeomID box[1];
 static dGeomID sphere[4];
 static dGeomID ground_box;
 
+//custom
+static dGeomID obstacle[4];
+
+static dBodyID sphbody;
+static dGeomID sphgeom;
+
+dGeomID gheight;
 
 // things that the user controls
 
 static dReal speed = 0, steer = 0;	// user commands
 static bool lock_cam = true;
+
+bool tp;
+
+float RandomFloat(float min, float max) {
+    return  (max - min) * ((((float)rand()) / (float)RAND_MAX)) + min;
+}
+
+dReal heightfield_callback(void*, int x, int z)
+{
+    float tmp1 = 0.08, tmp2 = 0.08;
+    dReal fx = (((dReal)x) - (HFIELD_WSTEP - 1) / 2) / (dReal)(HFIELD_WSTEP - 1);
+    dReal fz = (((dReal)z) - (HFIELD_DSTEP - 1) / 2) / (dReal)(HFIELD_DSTEP - 1);
+
+    if (x%5 == 0) {
+        tmp1 = -tmp1;
+    }
+
+    if (z%5 == 0) {
+        tmp2 = -tmp2;
+    }
+
+    // Create an interesting 'hump' shape
+    dReal h = REAL(1.0) + REAL(1.0) * (tmp1 + fx - tmp2 + fz);//REAL(1.0) + (REAL(-16.0) * (fx * fx * fx + fz * fz * fz));
+
+    return h;
+}
 
 // this is called by dSpaceCollide when two objects in space are
 // potentially colliding.
@@ -88,11 +141,56 @@ static bool lock_cam = true;
 static void nearCallback(void*, dGeomID o1, dGeomID o2)
 {
     int i, n;
-
+    
     // only collide things with the ground
     int g1 = (o1 == ground || o1 == ground_box);
     int g2 = (o2 == ground || o2 == ground_box);
-    if (!(g1 ^ g2)) return;
+
+    if (o1 == ground_box || o2 == ground_box) {
+        const int N = 10;
+        dContact contact[N];
+        n = dCollide(o1, o2, N, &contact[0].geom, sizeof(dContact));
+        if (n > 0) {
+            for (i = 0; i < n; i++) {
+                contact[i].surface.mode = dContactSlip1 | dContactSlip2 |
+                    dContactSoftERP | dContactSoftCFM | dContactApprox1 | dContactBounce;
+                contact[i].surface.mu = dInfinity;
+                contact[i].surface.slip1 = 0.1;
+                contact[i].surface.slip2 = 0.1;
+                contact[i].surface.soft_erp = 0.5;
+                contact[i].surface.soft_cfm = 0.3;
+                contact[i].surface.bounce = 2;
+                contact[i].surface.bounce_vel = 0;
+                dJointID c = dJointCreateContact(world, contactgroup, &contact[i]);
+                dJointAttach(c,
+                    dGeomGetBody(contact[i].geom.g1),
+                    dGeomGetBody(contact[i].geom.g2));
+            }
+        }
+    }
+    
+    if (o1 == sphgeom || o2 == sphgeom) {
+        const int N = 10;
+        dContact contact[N];
+        n = dCollide(o1, o2, N, &contact[0].geom, sizeof(dContact));
+        if (n > 0) {
+            for (i = 0; i < n; i++) {
+                contact[i].surface.mode = dContactSlip1 | dContactSlip2 |
+                    dContactSoftERP | dContactSoftCFM | dContactApprox1 | dContactBounce;
+                contact[i].surface.mu = dInfinity;
+                contact[i].surface.slip1 = 0.1;
+                contact[i].surface.slip2 = 0.1;
+                contact[i].surface.soft_erp = 0.5;
+                contact[i].surface.soft_cfm = 0.3;
+                contact[i].surface.bounce = 2;
+                contact[i].surface.bounce_vel = 0.9;
+                dJointID c = dJointCreateContact(world, contactgroup, &contact[i]);
+                dJointAttach(c,
+                    dGeomGetBody(contact[i].geom.g1),
+                    dGeomGetBody(contact[i].geom.g2));
+            }
+        }
+    }
 
     const int N = 10;
     dContact contact[N];
@@ -114,11 +212,10 @@ static void nearCallback(void*, dGeomID o1, dGeomID o2)
     }
 }
 
-
 // start simulation - set viewpoint
 
 static float xyz[3] = { 0,-55,0 };
-static float hpr[3] = { 0.8317f,-0.9817f,0.8000f };
+static float hpr[3] = { 0,-10,0 };
 
 static void start()
 {
@@ -199,15 +296,16 @@ void retourner(dBodyID obj_body) {
 
 static void command(int cmd)
 {
+
     switch (cmd) {
     case 'z': case 'Z':
         if (!(speed >= 3.3)) {
-            speed += 0.3;
+            speed += 1;
         }
         break;
     case 's': case 'S':
         if (!(speed <= -3.3)) {
-            speed -= 0.3;
+            speed -= 1;
         }
         break;
     case 'q': case 'Q':
@@ -226,6 +324,8 @@ static void command(int cmd)
         speed = 0;
         steer = 0;
         break;
+    case '2':
+        speed = 10000;
     case '1': {
         FILE* f = fopen("state.dif", "wt");
         if (f) {
@@ -236,6 +336,53 @@ static void command(int cmd)
     }
 }
 
+void drawGeom(dGeomID g, const dReal* pos, const dReal* R, int show_aabb)
+{
+    if (!g)
+        return;
+    if (!pos)
+        pos = dGeomGetPosition(g);
+    if (!R)
+        R = dGeomGetRotation(g);
+
+    int type = dGeomGetClass(g);
+    if (type == dHeightfieldClass) {
+
+        // Set ox and oz to zero for DHEIGHTFIELD_CORNER_ORIGIN mode.
+        int ox = (int)(-HFIELD_WIDTH / 2);
+        int oz = (int)(-HFIELD_DEPTH / 2);
+
+        //	for ( int tx = -1; tx < 2; ++tx )
+        //	for ( int tz = -1; tz < 2; ++tz )
+        dsSetColorAlpha(0.5, 1, 0.5, 1);
+        dsSetTexture(DS_NONE);
+
+        for (int i = 0; i < HFIELD_WSTEP - 1; ++i)
+            for (int j = 0; j < HFIELD_DSTEP - 1; ++j) {
+                dReal a[3], b[3], c[3], d[3];
+
+                a[0] = ox + (i)*HFIELD_WSAMP;
+                a[1] = heightfield_callback(NULL, i, j);
+                a[2] = oz + (j)*HFIELD_DSAMP;
+
+                b[0] = ox + (i + 1) * HFIELD_WSAMP;
+                b[1] = heightfield_callback(NULL, i + 1, j);
+                b[2] = oz + (j)*HFIELD_DSAMP;
+
+                c[0] = ox + (i)*HFIELD_WSAMP;
+                c[1] = heightfield_callback(NULL, i, j + 1);
+                c[2] = oz + (j + 1) * HFIELD_DSAMP;
+
+                d[0] = ox + (i + 1) * HFIELD_WSAMP;
+                d[1] = heightfield_callback(NULL, i + 1, j + 1);
+                d[2] = oz + (j + 1) * HFIELD_DSAMP;
+
+                dsDrawTriangle(pos, R, a, c, b, 1);
+                dsDrawTriangle(pos, R, b, c, d, 1);
+            }
+
+    }
+}
 
 // simulation loop
 
@@ -272,15 +419,8 @@ static void simLoop(int pause)
         dJointSetHinge2Param(jointChassis_roues[1], dParamHiStop, 0.75);
         dJointSetHinge2Param(jointChassis_roues[1], dParamFudgeFactor, 0.1);
 
-
         //view 
         //Mettre a jour la vue (pour qu'elle suive le robot)
-
-        /* tests
-        dBodyGetPosition(body[0]);
-        static float xyz[3] = { 0.8317f,-0.9817f,0.8000f };
-        static float hpr[3] = { 121.0000f,-27.5000f,0.0000f };
-        */
 
         dSpaceCollide(space, 0, &nearCallback);
         dWorldStep(world, 0.05);
@@ -295,6 +435,7 @@ static void simLoop(int pause)
     }
 
     dsSetColor(0, 1, 1);
+    dsSetColor(0, 1, 1);
     dsSetTexture(DS_WOOD);
     dReal sides[3] = { LENGTH,WIDTH,HEIGHT };
     dsDrawBox(dBodyGetPosition(chassis[0]), dBodyGetRotation(chassis[0]), sides);
@@ -303,9 +444,33 @@ static void simLoop(int pause)
         dBodyGetRotation(roues[i]), 0.08f, RADIUS);
 
     dVector3 ss;
+    dsSetColor(0.5, 0.5, 1);
     dGeomBoxGetLengths(ground_box, ss);
     dsDrawBox(dGeomGetPosition(ground_box), dGeomGetRotation(ground_box), ss);
+    
 
+    dsSetTexture(NULL);
+    dsSetColorAlpha(0, 0, 0, 1);
+    for (i = 0; i < 4; i++) {
+        dGeomBoxGetLengths(obstacle[i], ss);
+        dsDrawBox(dGeomGetPosition(obstacle[i]), dGeomGetRotation(obstacle[i]), ss);
+    }
+
+    
+
+    dsSetColorAlpha(0, 1, 0, 1);
+    const dReal* SPos = dBodyGetPosition(sphbody);
+    const dReal* SRot = dBodyGetRotation(sphbody);
+    const double spos[3] = { SPos[0], SPos[1], SPos[2] };
+    const double srot[12] = { SRot[0], SRot[1], SRot[2], SRot[3], SRot[4], SRot[5], SRot[6], SRot[7], SRot[8], SRot[9], SRot[10], SRot[11] };
+    dsDrawSphere
+    (
+        spos,
+        srot,
+        SPHERERADIUS
+    ); // single precision
+
+    drawGeom(gheight, 0, 0, 0);
 }
 
 
@@ -368,8 +533,8 @@ int main(int argc, char** argv)
 
     // set joint suspension
     for (i = 0; i < 4; i++) {
-        dJointSetHinge2Param(jointChassis_roues[i], dParamSuspensionERP, 0.4);
-        dJointSetHinge2Param(jointChassis_roues[i], dParamSuspensionCFM, 0.8);
+        dJointSetHinge2Param(jointChassis_roues[i], dParamSuspensionERP, 0.8);
+        dJointSetHinge2Param(jointChassis_roues[i], dParamSuspensionCFM, 1.6);
     }
 
     // lock back wheels along the steering axis
@@ -394,11 +559,71 @@ int main(int argc, char** argv)
 
     // environment
     ground_box = dCreateBox(space, 2, 1.5, 1);
-    dMatrix3 R;
-    dRFromAxisAndAngle(R, 0, 1, 0, -0.15);
-    dGeomSetPosition(ground_box, 2, 0, -0.34);
-    dGeomSetRotation(ground_box, R);
+    //dMatrix3 R;
+    //dRFromAxisAndAngle(R, 0, 1, 0, -0.15);
+    dGeomSetPosition(ground_box, 0, 0, -0.47);
+    //dGeomSetRotation(ground_box, R);
+    // sphere
+    sphbody = dBodyCreate(world);
+    dMassSetSphere(&m, 0.2, SPHERERADIUS);
+    dBodySetMass(sphbody, &m);
+    sphgeom = dCreateSphere(0, SPHERERADIUS);
+    dGeomSetBody(sphgeom, sphbody);
+    dBodySetPosition(sphbody, 0, 0, 5.5);
+    dSpaceAdd(space, sphgeom);
 
+    // obstacle
+    for (i = 0; i < 4; i++) {
+        if (i % 2 == 0) {
+            obstacle[i] = dCreateBox(space, 2, 1, 10);
+        }
+        else {
+            obstacle[i] = dCreateBox(space, 2, 10, 1);
+        }
+        
+    }
+
+    dGeomSetPosition(obstacle[1], 5, 0, 1+100);
+    dGeomSetPosition(obstacle[3], -5, 0, 1+100);
+    dGeomSetPosition(obstacle[0], 0, 5, 1+100);
+    dGeomSetPosition(obstacle[2], 0, -5, 1+100);
+
+    dMatrix3 R1;
+    dRFromAxisAndAngle(R1, 0, 1, 0, 1.55);
+
+    for (i = 0; i < 4; i++) {
+        dGeomSetRotation(obstacle[i], R1);
+    }
+
+    // our heightfield floor
+
+    dHeightfieldDataID heightid = dGeomHeightfieldDataCreate();
+
+    // Create an finite heightfield.
+    dGeomHeightfieldDataBuildCallback(heightid, NULL, heightfield_callback,
+        HFIELD_WIDTH, HFIELD_DEPTH, HFIELD_WSTEP, HFIELD_DSTEP,
+        REAL(1.0), REAL(0.0), REAL(0.0), 0);
+
+    // Give some very bounds which, while conservative,
+    // makes AABB computation more accurate than +/-INF.
+    dGeomHeightfieldDataSetBounds(heightid, REAL(-4.0), REAL(+6.0));
+
+    gheight = dCreateHeightfield(space, heightid, 1);
+
+    dVector3 pos;
+    pos[0] = 0;
+    pos[1] = 0;
+    pos[2] = 0;
+
+    // Rotate so Z is up, not Y (which is the default orientation)
+    dMatrix3 R;
+    dRSetIdentity(R);
+    dRFromAxisAndAngle(R, 1, 0, 0, DEGTORAD * 90);
+
+    // Place it.
+    dGeomSetRotation(gheight, R);
+    dGeomSetPosition(gheight, pos[0], pos[1], pos[2]);
+    
     // run simulation
     dsSimulationLoop(argc, argv, 1000, 800, &fn);
 
