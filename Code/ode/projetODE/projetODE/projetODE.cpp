@@ -34,6 +34,7 @@
 #include "math.h"
 #include <cmath>
 
+
 #ifdef _MSC_VER
 #pragma warning(disable:4244 4305)  // for VC++, no precision loss complaints
 #endif
@@ -64,13 +65,23 @@
 #define BOXHEIGHT 0.3	// box height
 #define BMASS 0.1		// box mass
 
-#define SPHERERADIUS 0.4 // sphere radius
+#define SPHERERADIUS 0.2 // sphere radius
 //turret
 #define TURRRADIUS    0.1
 #define TURRLENGTH    0.6
 
 static const dVector3 yunit = { 0, 1, 0 }, zunit = { 0, 0, 1 };
 
+#define GPB 3			// maximum number of geometries per body
+#define NUM 10          // maximum number of spheres
+struct MyObject {
+    dBodyID body;			// the body
+    dGeomID geom[GPB];		// geometries representing this body
+};
+
+static int num = 0;
+static int nextobj = 0;		// next object to recycle if num==NUM
+static MyObject obj[NUM];
 
 // dynamics and collision objects (chassis, 4 wheels, environment)
 
@@ -114,13 +125,7 @@ static void nearCallback(void*, dGeomID o1, dGeomID o2)
 {
     int i, n;
     // Pour prendre en compte toutes les collisisons, commenter les 3 lignes ci dessous
-    /* 
-    // only collide things with the ground
-    int g1 = (o1 == ground || o1 == ground_box || o1 == ground_box2 );
-    int g2 = (o2 == ground || o2 == ground_box || o2 == ground_box2 );
-    if (!(g1 ^ g2)) return;
-    */
-    if (o1 == box[0] || o1 == turrgeom && o2 == box[0] || o2 == turrgeom) {
+    if ((o1 == sphgeom && o2 == turrgeom) || (o1 == turrgeom && o2 == sphgeom)) {
         return;
     }
     const int N = 10;
@@ -177,12 +182,13 @@ float calCos(float xx, float xy, float yx, float yy, const dReal* rota) {
     hyp = relxx + relyy; //calcul de l'hypoténuse au carré
     hyp = sqrt(hyp);// calcul de l'hupoténuse
     teta = (relx / hyp);//calcul de l'angle adj/hyp
-    alphaCos = acos(teta) * 180 / M_PI;//calcul de l'angle alpha demandé
+    alphaCos = acos(teta)*180 / M_PI;//calcul de l'angle alpha demandé
 
     if (rota[1] < 0) {
         return alphaCos; // renvoie de la valeur demandée
     }
     return -1 * alphaCos; // renvoie de la valeur demandée
+
 }
 
 void camPos(dBodyID obj_body) // print a position
@@ -197,7 +203,7 @@ void camPos(dBodyID obj_body) // print a position
 
     //printf("x=%f y=%f z=%f \n", x, y, z);
     const dReal* rota = dBodyGetRotation(obj_body); // on prend l'orientation du chassis
-    xyz[0] = fx + (rota[0] * (-2)); // on ajoute l
+    xyz[0] = fx + (rota[0] * (-2)); // on décale la camera de 2
     xyz[1] = fy + (rota[1] * (2));
     xyz[2] = fz + 1;
 
@@ -207,6 +213,7 @@ void camPos(dBodyID obj_body) // print a position
 
     //printf("%f\n", result_cos);
     dsSetViewpoint(xyz, hpr);
+    
     //printf("rota0: %f\trota1: %f\n", rota[0], rota[1]);
 
 }
@@ -227,8 +234,53 @@ void retourner(dBodyID obj_body) {
         dRFromAxisAndAngle(R, 0, 0, 0, 0);
         dBodySetRotation(roues[i], R);
     }
+}
+
+void tirer() {
+    int i,j,k;
+    dMass m;
+    if (num < NUM) {
+        // new object to be created
+        i = num;
+        num++;
+    }
+
+    else {
+         // recycle existing object
+         i = nextobj++;
+         nextobj %= num; // wrap-around if needed
+
+         // destroy the body and geoms for slot i
+         dBodyDestroy(obj[i].body);
+         obj[i].body = 0;
+
+         for (k = 0; k < GPB; k++)
+             if (obj[i].geom[k]) {
+                 dGeomDestroy(obj[i].geom[k]);
+                 obj[i].geom[k] = 0;
+             }
+     }
+    obj[i].body = dBodyCreate(world);
+    dMassSetSphere(&m, 0.2, SPHERERADIUS);
+    dBodySetMass(obj[i].body, &m);
+    obj[i].geom[0] = dCreateSphere(0, SPHERERADIUS);
+    dGeomSetBody(obj[i].geom[0], obj[i].body);
+
+    dSpaceAdd(space, obj[i].geom[0]);
     
-    
+
+
+
+    const dReal* cpos = dBodyGetPosition(chassis[0]);
+    dReal pos[3];
+    pos[0] = cpos[0];
+    pos[1] = cpos[1];
+    pos[2] = cpos[2];
+    const dReal* rota = dBodyGetRotation(chassis[0]);
+    dBodySetPosition(obj[i].body, pos[0], pos[1], pos[2] + 0.55);
+    int force = 10;
+    dBodySetLinearVel(obj[i].body, -(rota[0] * (-force)), -(rota[1] * (force)), 1);
+    dBodySetAngularVel(obj[i].body, 0, 0, 0);
 }
 
 // called when a key pressed
@@ -261,6 +313,7 @@ static void command(int cmd)
     case 'l': case 'L':
         lock_cam = !lock_cam;
         break;
+
     case '5':
         retourner(chassis[0]);
         break;
@@ -268,15 +321,18 @@ static void command(int cmd)
         speed = 0;
         steer = 0;
         break;
-    case '1': {
-        FILE* f = fopen("state.dif", "wt");
+    case '1':
+        /*FILE* f = fopen("state.dif", "wt");
         if (f) {
             dWorldExportDIF(world, f, "");
-            fclose(f);
-        }
-    }
+            fclose(f);*/
+
+    case 'm': case 'M':
+        tirer();
+        break;
     }
 }
+
 
 
 // simulation loop
@@ -314,7 +370,7 @@ static void simLoop(int pause)
         dJointSetHinge2Param(jointChassis_roues[1], dParamHiStop, 0.75);
         dJointSetHinge2Param(jointChassis_roues[1], dParamFudgeFactor, 0.1);
 
-        dReal v3 = steerCanon - dJointGetHinge2Angle1(joint_turr);
+        /*dReal v3 = steerCanon - dJointGetHinge2Angle1(joint_turr);
         if (v3 > 0.2) v3 = 0.2;
         if (v3 < -0.2) v3 = -0.2;
         v3 *= 10.0;
@@ -322,7 +378,7 @@ static void simLoop(int pause)
         dJointSetHinge2Param(joint_turr, dParamFMax, 0.2);
         dJointSetHinge2Param(joint_turr, dParamLoStop, -0.75);
         dJointSetHinge2Param(joint_turr, dParamHiStop, 0.75);
-        dJointSetHinge2Param(joint_turr, dParamFudgeFactor, 0.1);
+        dJointSetHinge2Param(joint_turr, dParamFudgeFactor, 0.1);*/
 
 
         dSpaceCollide(space, 0, &nearCallback);
@@ -358,6 +414,18 @@ static void simLoop(int pause)
     dsDrawBox(dGeomGetPosition(ground_box2), dGeomGetRotation(ground_box2), ss2);
 
 
+    for (int i = 0; i < num; i++) {
+        const dReal* SPos = dBodyGetPosition(obj[i].body);
+        const dReal* SRot = dBodyGetRotation(obj[i].body);
+        const double spos[3] = { SPos[0], SPos[1], SPos[2] };
+        const double srot[12] = { SRot[0], SRot[1], SRot[2], SRot[3], SRot[4], SRot[5], SRot[6], SRot[7], SRot[8], SRot[9], SRot[10], SRot[11] };
+        dsDrawSphere
+        (
+            spos,
+            srot,
+            SPHERERADIUS
+        ); // single precision
+    }
 
     //sphere
     const dReal* SPos = dBodyGetPosition(sphbody);
@@ -498,7 +566,7 @@ int main(int argc, char** argv)
     sphgeom = dCreateSphere(0, SPHERERADIUS);
     dGeomSetBody(sphgeom, sphbody);
     dBodySetPosition(sphbody, 0, 0, 5.5);
-    //dSpaceAdd(space, sphgeom);
+    dSpaceAdd(space, sphgeom);
 
     // box body
     boxbody = dBodyCreate(world);
@@ -544,20 +612,20 @@ int main(int argc, char** argv)
     dBodySetPosition(turrbody[0], 0,0, STARTZ + HEIGHT +BOXHEIGHT-0.1 );
     dSpaceAdd(space, turrgeom);
     dMatrix3 Rbox;
-    dRFromAxisAndAngle(Rbox,90,90,90,90);
+    dRFromAxisAndAngle(Rbox,0,90,0,80);
     dGeomSetRotation(turrgeom, Rbox);
     
     // joint turret
-    /*joint_turr = dJointCreateFixed(world, 0);
+    joint_turr = dJointCreateFixed(world, 0);
     dJointAttach(joint_turr, turrbody[0], boxbody);
-    dJointSetFixed(joint_turr);*/
+    dJointSetFixed(joint_turr);
     
-    joint_turr = dJointCreateHinge2(world, 0);
+    /*joint_turr = dJointCreateHinge2(world, 0);
     dJointAttach(joint_turr, boxbody, turrbody[0]);
     const dReal* a = dBodyGetPosition(turrbody[0]);
     dJointSetHinge2Anchor(joint_turr, a[0], a[1], a[2]);
     dJointSetHinge2Axes(joint_turr, zunit, yunit);
-
+ */
 
     // run simulation
     dsSimulationLoop(argc, argv, 1000, 800, &fn);
