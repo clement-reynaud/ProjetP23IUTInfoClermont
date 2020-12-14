@@ -21,19 +21,20 @@
  *************************************************************************/
 
  /*
-
  buggy with suspension.
  this also shows you how to use geom groups.
-
  */
 
-
+    #pragma once
 #include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include "texturepath.h"
 #include "math.h"
 #include <cmath>
 #include "creationBuggy.h"
+#include "deplaceBuggy.h"
+#include "projetODE.h"
+
 
 #ifdef _MSC_VER
 #pragma warning(disable:4244 4305)  // for VC++, no precision loss complaints
@@ -48,7 +49,6 @@
 #define dsDrawCapsule dsDrawCapsuleD
 #endif
 
-
 // some constants
 
 #define LENGTH 0.7	// chassis length
@@ -57,7 +57,7 @@
 #define RADIUS 0.3	// wheel radius
 #define CMASS 1		// chassis mass
 #define WMASS 0.2	// wheel mass
-#define STARTX1 -5   //Start x of chassis 1
+#define STARTX1 -5   //Start heigth of the buggy
 #define STARTY1 0   //Start y of chassis 1
 #define STARTZ 0.5	// starting height of chassis
 #define STARTX2 -10   //Start x of chassis 2
@@ -70,7 +70,6 @@
 //Cannon deffinition
 #define CANNON_BALL_MASS 0.1	// mass of the cannon ball
 #define CANNON_BALL_RADIUS 0.05 // size of the cannon ball
-
 
 static const dVector3 yunit = { 0, 1, 0 }, zunit = { 0, 0, 1 };
 
@@ -127,6 +126,7 @@ static float hpr[3] = { 0.8317f,-0.9817f,0.8000f };
 
 static void start()
 {
+    buggy[0].moveBuggy.lock_cam = true;
     dAllocateODEDataForThread(dAllocateMaskAll);
 
     dsSetViewpoint(xyz, hpr);
@@ -147,123 +147,61 @@ static void start()
     );
 }
 
-float calCos(float xx, float xy, float yx, float yy, const dReal* rota) {
-    float relx, relxx;//float de distance relative en x
-    float rely, relyy;//float de distance relative en y
-    float alphaCos;// angle à la sortie du cosinus
-    float hyp;//float de l'hypothnuse
-    float teta;// angle teta du calcul du adjacent/hypoténuse
-
-
-    relx = xx - yx; //calcul de la distance x entre le centre de la voiture et la caméra
-    rely = xy - yy; //calcul de la distance y entre le centre de la voiture et la caméra
-    relxx = relx * relx; // calcul de la distance relative x au carré
-    relyy = rely * rely; // calcul de la distance relative y au carré
-    hyp = relxx + relyy; //calcul de l'hypoténuse au carré
-    hyp = sqrt(hyp);// calcul de l'hupoténuse
-    teta = (relx / hyp);//calcul de l'angle adj/hyp
-    alphaCos = acos(teta) * 180 / M_PI;//calcul de l'angle alpha demandé
-
-    if (rota[1] < 0) {
-        return alphaCos; // renvoie de la valeur demandée
-    }
-    return -1 * alphaCos; // renvoie de la valeur demandée
-}
-
-void camPos(dBodyID obj_body) // print a position
-{
-
-    const dReal* pos;
-    float fx, fy, fz;
-    pos = dBodyGetPosition(obj_body); // on prend les coordonnées du chassis
-    fx = (float)pos[0]; // x
-    fy = (float)pos[1]; // y
-    fz = (float)pos[2]; // z
-
-    const dReal* rota = dBodyGetRotation(obj_body); // on prend l'orientation du chassis
-    xyz[0] = fx + (rota[0] * (-2)); // on ajoute l
-    xyz[1] = fy + (rota[1] * (2));
-    xyz[2] = fz + 1;
-
-    float result_cos = calCos(fx, fy, xyz[0], xyz[1], rota);//float result_cos = calCos(fx, fy, xyz[0], xyz[1], rota);
-    hpr[0] = result_cos;
-    dsSetViewpoint(xyz, hpr);
-
-
-}
-
-void retourner(dBodyID obj_body) {
-    steer = 0;
-    speed = 0;
-    const dReal* pos;
-    pos = dBodyGetPosition(obj_body);
-    dBodySetPosition(obj_body, pos[0], pos[1], pos[2] + 1);
-
-    dMatrix3 R;
-    dRFromAxisAndAngle(R, 0, 0, 0, 0);
-    dBodySetRotation(obj_body, R);
-}
-
-// called when a key pressed
-
 static void command(int cmd)
 {
     switch (cmd) {
     case 'z':
-        if (!(speedBuggy1 >= 3.3)) {
-            speedBuggy1 += 0.3;
+        if (!(buggy[0].moveBuggy.speedBuggy >= 3.3)) {
+            buggy[0].moveBuggy.speedBuggy += 0.3;
         }
         break;
     case 'Z':
-        if (!(speedBuggy2 >= 3.3)) {
-            speedBuggy2 += 0.3;
+        if (!(buggy[1].moveBuggy.speedBuggy >= 3.3)) {
+            buggy[1].moveBuggy.speedBuggy += 0.3;
         }
         break;
     case 's':
-        if (!(speedBuggy1 <= -3.3)) {
-            speedBuggy1 -= 0.3;
+        if (!(buggy[0].moveBuggy.speedBuggy <= -3.3)) {
+            buggy[0].moveBuggy.speedBuggy -= 0.3;
         }
         break;
     case 'S':
-        if (!(speedBuggy2 <= -3.3)) {
-            speedBuggy2 -= 0.3;
+        if (!(buggy[1].moveBuggy.speedBuggy <= -3.3)) {
+            buggy[1].moveBuggy.speedBuggy -= 0.3;
         }
         break;
     case 'q':
-        steerBuggy1 -= 0.3;
+        buggy[0].moveBuggy.steerBuggy -= 0.3;
         break;
-    case 'Q' :
-        steerBuggy2 -= 0.3;
+    case 'Q':
+        buggy[1].moveBuggy.steerBuggy -= 0.3;
         break;
     case 'd':
-        steerBuggy1 += 0.3;
+        buggy[0].moveBuggy.steerBuggy += 0.3;
         break;
-    case 'D' :
-        steerBuggy2 += 0.3;
+    case 'D':
+        buggy[1].moveBuggy.steerBuggy += 0.3;
         break;
     case 'l':
-        if (lock_cam2 == true) {
-            lock_cam2 = false;
+        if (buggy[1].moveBuggy.lock_cam == true) {
+            buggy[1].moveBuggy.lock_cam = false;
         }
-        lock_cam1 = !lock_cam1;
+        buggy[0].moveBuggy.lock_cam = !buggy[0].moveBuggy.lock_cam;
         break;
     case 'L':
-        if (lock_cam1 == true) {
-            lock_cam1 = false;
+        if (buggy[0].moveBuggy.lock_cam == true) {
+            buggy[0].moveBuggy.lock_cam = false;
         }
-        lock_cam2 = !lock_cam2;
+        buggy[1].moveBuggy.lock_cam = !buggy[1].moveBuggy.lock_cam;
         break;
     case '5':
-        retourner(buggy[0].chassis[0]);
+        retournerBuggy(buggy[0]);
         break;
     case '6':
-        retourner(buggy[1].chassis[0]);
+        retournerBuggy(buggy[1]);
     case ' ':
-        speedBuggy1 = 0;
-        steerBuggy1 = 0;
-        speedBuggy2 = 0;
-        steerBuggy2 = 0;
-
+        arreterBuggy(buggy[0]);
+        arreterBuggy(buggy[1]);
         break;
     case '1': {
         FILE* f = fopen("state.dif", "wt");
@@ -274,6 +212,9 @@ static void command(int cmd)
     }
     }
 }
+
+
+// called when a key pressed
 
 void speedAndSteer(dJointID jointChassis_roues,dReal speedBuggy, dReal steerBuggy) {
     dJointSetHinge2Param(jointChassis_roues, dParamVel2, -speedBuggy);
@@ -294,10 +235,8 @@ static void simLoop(int pause)
 {
     int i;
     if (!pause) {
-        speedAndSteer(buggy[0].jointChassis_roues[0], speedBuggy1, steerBuggy1);
-        speedAndSteer(buggy[0].jointChassis_roues[1], speedBuggy1, steerBuggy1);
-        speedAndSteer(buggy[1].jointChassis_roues[0], speedBuggy2, steerBuggy2);
-        speedAndSteer(buggy[1].jointChassis_roues[1], speedBuggy2, steerBuggy2);
+        deplacementBuggy(&buggy[0]);
+        deplacementBuggy(&buggy[1]);
 
         dSpaceCollide(space, 0, &nearCallback);
         dWorldStep(world, 0.05);
@@ -306,36 +245,36 @@ static void simLoop(int pause)
         dJointGroupEmpty(contactgroup);
 
         // fixed or not-fixed camera
-        if (lock_cam1) {
-            camPos(buggy[0].chassis[0]);
+        if (buggy[0].moveBuggy.lock_cam) {
+            camPos(buggy[0],xyz,hpr);
         }
 
-        if (lock_cam2) {
-            camPos(buggy[1].chassis[0]);
+        if (buggy[1].moveBuggy.lock_cam) {
+            camPos(buggy[1], xyz, hpr);
         }
     }
     dReal sides[3] = { LENGTH,WIDTH,HEIGHT };
 
+    //Draw buggy 1 & 2
     dsSetColor(0, 1, 1);
     dsSetTexture(DS_WOOD);
-    //Draw buggy 1 & 2
-    drawBuggy(buggy[0].chassis, buggy[0].roues, buggy[0].turrbody, sides, RADIUS);
+    drawBuggy(buggy[0], sides, RADIUS);
     dsSetColor(1, 0, 0);
     dsSetTexture(DS_WOOD);
-    drawBuggy(buggy[1].chassis, buggy[1].roues, buggy[1].turrbody, sides, RADIUS);
+    drawBuggy(buggy[1], sides, RADIUS);
     dsSetColor(0, 1, 0);
     dsSetTexture(DS_WOOD);
     //Draw buggy 3, 4, 5 & 6
-    drawBuggy(buggy[2].chassis, buggy[2].roues, buggy[2].turrbody, sides, RADIUS);
+    drawBuggy(buggy[2], sides, RADIUS);
     dsSetColor(0, 0, 1);
     dsSetTexture(DS_WOOD);
-    drawBuggy(buggy[3].chassis, buggy[3].roues, buggy[3].turrbody, sides, RADIUS);
+    drawBuggy(buggy[3], sides, RADIUS);
     dsSetColor(1, 1, 0);
     dsSetTexture(DS_WOOD);
-    drawBuggy(buggy[4].chassis, buggy[4].roues, buggy[4].turrbody, sides, RADIUS);
+    drawBuggy(buggy[4], sides, RADIUS);
     dsSetColor(1, 0, 1);
     dsSetTexture(DS_WOOD);
-    drawBuggy(buggy[5].chassis, buggy[5].roues, buggy[5].turrbody, sides, RADIUS);
+    drawBuggy(buggy[5], sides, RADIUS);
 
     dVector3 ss;
     dGeomBoxGetLengths(ground_box, ss);
@@ -365,12 +304,12 @@ int main(int argc, char** argv)
     dWorldSetGravity(world, 0, 0, -0.98);
     ground = dCreatePlane(space, 0, 0, 1, 0);
 
-    createABuggy(buggy[0].chassis, buggy[0].roues, buggy[0].turrbody, buggy[0].jointChassis_roues, buggy[0].joint_turr, buggy[0].car_space, buggy[0].box, buggy[0].sphere, buggy[0].turrgeom, m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -5, 0, STARTZ, yunit, zunit, space, world);
-    createABuggy(buggy[1].chassis, buggy[1].roues, buggy[1].turrbody, buggy[1].jointChassis_roues, buggy[1].joint_turr, buggy[1].car_space, buggy[1].box, buggy[1].sphere, buggy[1].turrgeom, m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -8, 0, STARTZ, yunit, zunit, space, world);
-    createABuggy(buggy[2].chassis, buggy[2].roues, buggy[2].turrbody, buggy[2].jointChassis_roues, buggy[2].joint_turr, buggy[2].car_space, buggy[2].box, buggy[2].sphere, buggy[2].turrgeom, m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -8, -5, STARTZ, yunit, zunit, space, world);
-    createABuggy(buggy[3].chassis, buggy[3].roues, buggy[3].turrbody, buggy[3].jointChassis_roues, buggy[3].joint_turr, buggy[3].car_space, buggy[3].box, buggy[3].sphere, buggy[3].turrgeom, m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -8, 5, STARTZ, yunit, zunit, space, world);
-    createABuggy(buggy[4].chassis, buggy[4].roues, buggy[4].turrbody, buggy[4].jointChassis_roues, buggy[4].joint_turr, buggy[4].car_space, buggy[4].box, buggy[4].sphere, buggy[4].turrgeom, m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -8, -10, STARTZ, yunit, zunit, space, world);
-    createABuggy(buggy[5].chassis, buggy[5].roues, buggy[5].turrbody, buggy[5].jointChassis_roues, buggy[5].joint_turr, buggy[5].car_space, buggy[5].box, buggy[5].sphere, buggy[5].turrgeom, m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -8, 10, STARTZ, yunit, zunit, space, world);
+    createABuggy(&buggy[0], m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -5, 0, STARTZ, yunit, zunit, space, world);
+    createABuggy(&buggy[1], m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -8, 0, STARTZ, yunit, zunit, space, world);
+    createABuggy(&buggy[2], m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -8, 5, STARTZ, yunit, zunit, space, world);
+    createABuggy(&buggy[3], m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -8, -5, STARTZ, yunit, zunit, space, world);
+    createABuggy(&buggy[4], m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -8, 10, STARTZ, yunit, zunit, space, world);
+    createABuggy(&buggy[5], m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -8, -10, STARTZ, yunit, zunit, space, world);
 
     // environment
     ground_box = dCreateBox(space, 2, 1.5, 1);
@@ -382,12 +321,12 @@ int main(int argc, char** argv)
     // run simulation
     dsSimulationLoop(argc, argv, 1000, 800, &fn);
 
-    destroyBuggy(buggy[0].box, buggy[0].sphere, buggy[0].turrgeom);
-    destroyBuggy(buggy[1].box, buggy[1].sphere, buggy[1].turrgeom);
-    destroyBuggy(buggy[2].box, buggy[2].sphere, buggy[2].turrgeom);
-    destroyBuggy(buggy[3].box, buggy[3].sphere, buggy[3].turrgeom);
-    destroyBuggy(buggy[4].box, buggy[4].sphere, buggy[4].turrgeom);
-    destroyBuggy(buggy[5].box, buggy[5].sphere, buggy[5].turrgeom);
+    destroyBuggy(buggy[0]);
+    destroyBuggy(buggy[1]);
+    destroyBuggy(buggy[2]);
+    destroyBuggy(buggy[3]);
+    destroyBuggy(buggy[4]);
+    destroyBuggy(buggy[5]);
 
     dGeomDestroy(ground_box);
     dJointGroupDestroy(contactgroup);
