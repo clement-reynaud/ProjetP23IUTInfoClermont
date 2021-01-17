@@ -50,7 +50,6 @@
 #endif
 
 // some constants
-
 #define LENGTH 0.7	// chassis length
 #define WIDTH 0.5	// chassis width
 #define HEIGHT 0.2	// chassis height
@@ -59,21 +58,28 @@
 #define WMASS 0.2	// wheel mass
 #define STARTX1 -5   //Start heigth of the buggy
 #define STARTY1 0   //Start y of chassis 1
-#define STARTZ 0.5	// starting height of chassis
+#define STARTZ 2	// starting height of chassis
 #define STARTX2 -10   //Start x of chassis 2
 #define STARTY2 0   //Start y of chassis 2
 
-//turret
-#define TURRRADIUS    0.07
-#define TURRLENGTH    0.3
+//Turret def
+//canon
+#define TURRRADIUS    0.1
+#define TURRLENGTH    0.6
 
-//Cannon deffinition
-#define CANNON_BALL_MASS 0.1	// mass of the cannon ball
-#define CANNON_BALL_RADIUS 0.05 // size of the cannon ball
+//box
+#define BOXLENGTH 0.15    // box length
+#define BOXWIDTH 0.15    // box width
+#define BOXHEIGHT 0.3    // box height
+#define BMASS 0.1        // box mass
+
+//Bullet
+#define SPHERERADIUS 0.2
 
 static const dVector3 yunit = { 0, 1, 0 }, zunit = { 0, 0, 1 };
 
 Buggy buggy[6];
+Turret turr[6];
 static dWorldID world;
 static dSpaceID space;
 static dJointGroupID contactgroup;
@@ -150,84 +156,74 @@ static void start()
 static void command(int cmd)
 {
     switch (cmd) {
-    case 'z':
-        if (!(buggy[0].moveBuggy.speedBuggy >= 3.3)) {
-            buggy[0].moveBuggy.speedBuggy += 0.3;
-        }
-        break;
-    case 'Z':
-        if (!(buggy[1].moveBuggy.speedBuggy >= 3.3)) {
-            buggy[1].moveBuggy.speedBuggy += 0.3;
-        }
-        break;
-    case 's':
-        if (!(buggy[0].moveBuggy.speedBuggy <= -3.3)) {
-            buggy[0].moveBuggy.speedBuggy -= 0.3;
-        }
-        break;
-    case 'S':
-        if (!(buggy[1].moveBuggy.speedBuggy <= -3.3)) {
-            buggy[1].moveBuggy.speedBuggy -= 0.3;
-        }
-        break;
-    case 'q':
-        buggy[0].moveBuggy.steerBuggy -= 0.3;
-        break;
-    case 'Q':
-        buggy[1].moveBuggy.steerBuggy -= 0.3;
-        break;
-    case 'd':
-        buggy[0].moveBuggy.steerBuggy += 0.3;
-        break;
-    case 'D':
-        buggy[1].moveBuggy.steerBuggy += 0.3;
-        break;
-    case 'l':
-        if (buggy[1].moveBuggy.lock_cam == true) {
-            buggy[1].moveBuggy.lock_cam = false;
-        }
-        buggy[0].moveBuggy.lock_cam = !buggy[0].moveBuggy.lock_cam;
-        break;
-    case 'L':
-        if (buggy[0].moveBuggy.lock_cam == true) {
-            buggy[0].moveBuggy.lock_cam = false;
-        }
-        buggy[1].moveBuggy.lock_cam = !buggy[1].moveBuggy.lock_cam;
-        break;
-    case '5':
-        retournerBuggy(buggy[0]);
-        break;
-    case '6':
-        retournerBuggy(buggy[1]);
-    case ' ':
-        arreterBuggy(buggy[0]);
-        arreterBuggy(buggy[1]);
-        break;
-    case '1': {
-        FILE* f = fopen("state.dif", "wt");
-        if (f) {
-            dWorldExportDIF(world, f, "");
-            fclose(f);
+        case 'z':
+            if (!(buggy[0].moveBuggy.speedBuggy >= 10)) {
+                buggy[0].moveBuggy.speedBuggy += 0.5;
+            }
+            break;
+        case 'Z':
+            if (!(buggy[1].moveBuggy.speedBuggy >= 10)) {
+                buggy[1].moveBuggy.speedBuggy += 0.5;
+            }
+            break;
+        case 's':
+            if (!(buggy[0].moveBuggy.speedBuggy <= -10)) {
+                buggy[0].moveBuggy.speedBuggy -= 0.5;
+            }
+            break;
+        case 'S':
+            if (!(buggy[1].moveBuggy.speedBuggy <= -10)) {
+                buggy[1].moveBuggy.speedBuggy -= 0.5;
+            }
+            break;
+        case 'q':
+            buggy[0].moveBuggy.steerBuggy -= 0.3;
+            break;
+        case 'Q':
+            buggy[1].moveBuggy.steerBuggy -= 0.3;
+            break;
+        case 'd':
+            buggy[0].moveBuggy.steerBuggy += 0.3;
+            break;
+        case 'D':
+            buggy[1].moveBuggy.steerBuggy += 0.3;
+            break;
+        case 't':
+            tirer(buggy[0], SPHERERADIUS, space, world);
+            break;
+        case'T':
+            tirer(buggy[1], SPHERERADIUS, space, world);
+            break;
+        case 'l':
+            if (buggy[1].moveBuggy.lock_cam == true) {
+                buggy[1].moveBuggy.lock_cam = false;
+            }
+            buggy[0].moveBuggy.lock_cam = !buggy[0].moveBuggy.lock_cam;
+            break;
+        case 'L':
+            if (buggy[0].moveBuggy.lock_cam == true) {
+                buggy[0].moveBuggy.lock_cam = false;
+            }
+            buggy[1].moveBuggy.lock_cam = !buggy[1].moveBuggy.lock_cam;
+            break;
+        case '5':
+            retournerBuggy(buggy[0]);
+            break;
+        case '6':
+            retournerBuggy(buggy[1]);
+            break;
+        case ' ':
+            arreterBuggy(buggy[0]);
+            arreterBuggy(buggy[1]);
+            break;
+        case '1': {
+            FILE* f = fopen("state.dif", "wt");
+            if (f) {
+                dWorldExportDIF(world, f, "");
+                fclose(f);
+            }
         }
     }
-    }
-}
-
-
-// called when a key pressed
-
-void speedAndSteer(dJointID jointChassis_roues,dReal speedBuggy, dReal steerBuggy) {
-    dJointSetHinge2Param(jointChassis_roues, dParamVel2, -speedBuggy);
-    dJointSetHinge2Param(jointChassis_roues, dParamFMax2, 0.1);
-    dReal s = steerBuggy - dJointGetHinge2Angle1(jointChassis_roues);
-    if (s > 0.1) s = 0.1;
-    if (s < -0.1) s = -0.1;
-    s *= 10.0;
-    dJointSetHinge2Param(jointChassis_roues, dParamVel, s);
-    dJointSetHinge2Param(jointChassis_roues, dParamFMax, 0.2);
-    dJointSetHinge2Param(jointChassis_roues, dParamLoStop, -0.75);
-    dJointSetHinge2Param(jointChassis_roues, dParamHiStop, 0.75);
-    dJointSetHinge2Param(jointChassis_roues, dParamFudgeFactor, 0.1);
 }
 
 // simulation loop
@@ -246,7 +242,7 @@ static void simLoop(int pause)
 
         // fixed or not-fixed camera
         if (buggy[0].moveBuggy.lock_cam) {
-            camPos(buggy[0],xyz,hpr);
+            camPos(buggy[0], xyz, hpr);
         }
 
         if (buggy[1].moveBuggy.lock_cam) {
@@ -255,35 +251,35 @@ static void simLoop(int pause)
     }
     dReal sides[3] = { LENGTH,WIDTH,HEIGHT };
 
+    int colors[3];
     //Draw buggy 1 & 2
-    dsSetColor(0, 1, 1);
+    colors[0] = 0; colors[1] = 1; colors[2] = 1;
     dsSetTexture(DS_WOOD);
-    drawBuggy(buggy[0], sides, RADIUS);
-    dsSetColor(1, 0, 0);
+    drawBuggy(buggy[0], turr[0], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS, colors);
+    colors[0] = 1; colors[1] = 0; colors[2] = 0;
     dsSetTexture(DS_WOOD);
-    drawBuggy(buggy[1], sides, RADIUS);
-    dsSetColor(0, 1, 0);
+    drawBuggy(buggy[1], turr[1], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS, colors);
+    colors[0] = 0; colors[1] = 1; colors[2] = 0;
     dsSetTexture(DS_WOOD);
     //Draw buggy 3, 4, 5 & 6
-    drawBuggy(buggy[2], sides, RADIUS);
-    dsSetColor(0, 0, 1);
+    drawBuggy(buggy[2], turr[2], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS, colors);
+    colors[0] = 0; colors[1] = 0; colors[2] = 1;
     dsSetTexture(DS_WOOD);
-    drawBuggy(buggy[3], sides, RADIUS);
-    dsSetColor(1, 1, 0);
+    drawBuggy(buggy[3], turr[3], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS, colors);
+    colors[0] = 1; colors[1] = 1; colors[2] = 0;
     dsSetTexture(DS_WOOD);
-    drawBuggy(buggy[4], sides, RADIUS);
-    dsSetColor(1, 0, 1);
+    drawBuggy(buggy[4], turr[4], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS, colors);
+    colors[0] = 1; colors[1] = 0; colors[2] = 1;
     dsSetTexture(DS_WOOD);
-    drawBuggy(buggy[5], sides, RADIUS);
+    drawBuggy(buggy[5], turr[5], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS, colors);
 
+    dsSetColor(1, 1, 1);
     dVector3 ss;
     dGeomBoxGetLengths(ground_box, ss);
     dsDrawBox(dGeomGetPosition(ground_box), dGeomGetRotation(ground_box), ss);
-
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv){
     int i;
     dMass m;
 
@@ -303,13 +299,27 @@ int main(int argc, char** argv)
     contactgroup = dJointGroupCreate(0);
     dWorldSetGravity(world, 0, 0, -0.98);
     ground = dCreatePlane(space, 0, 0, 1, 0);
+    //void createABuggy(Buggy* buggy, Turret* turret, dMass m,float bMass, float cMass, float wMass, float length, float width, float heigh, float boxLenght,float boxWidth, float boxHeight, float cylinderLenght, 
+    //float cylinderRadius, float radius,int x, int y, int z,const dVector3 yunit,const dVector3 zunit, dSpaceID space, dWorldID world){
 
-    createABuggy(&buggy[0], m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -5, 0, STARTZ, yunit, zunit, space, world);
-    createABuggy(&buggy[1], m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -8, 0, STARTZ, yunit, zunit, space, world);
-    createABuggy(&buggy[2], m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -8, 5, STARTZ, yunit, zunit, space, world);
-    createABuggy(&buggy[3], m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -8, -5, STARTZ, yunit, zunit, space, world);
-    createABuggy(&buggy[4], m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -8, 10, STARTZ, yunit, zunit, space, world);
-    createABuggy(&buggy[5], m, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, RADIUS, -8, -10, STARTZ, yunit, zunit, space, world);
+    /*
+    //Turret def
+//canon
+#define TURRRADIUS    0.1
+#define TURRLENGTH    0.6
+
+//box
+#define BOXLENGTH 0.15    // box length
+#define BOXWIDTH 0.15    // box width
+#define BOXHEIGHT 0.3    // box height
+#define BMASS 0.1        // box mass
+    */
+    createABuggy(&buggy[0], &turr[0], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -1, 0, STARTZ, yunit, zunit, space, world);
+    createABuggy(&buggy[1], &turr[1], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -5, 0, STARTZ, yunit, zunit, space, world);
+    createABuggy(&buggy[2], &turr[2], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -5, 3, STARTZ, yunit, zunit, space, world);
+    createABuggy(&buggy[3], &turr[3], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -5, 6, STARTZ, yunit, zunit, space, world);
+    createABuggy(&buggy[4], &turr[4], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -5, -3, STARTZ, yunit, zunit, space, world);
+    createABuggy(&buggy[5], &turr[5], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -5, -6, STARTZ, yunit, zunit, space, world);
 
     // environment
     ground_box = dCreateBox(space, 2, 1.5, 1);
@@ -321,12 +331,12 @@ int main(int argc, char** argv)
     // run simulation
     dsSimulationLoop(argc, argv, 1000, 800, &fn);
 
-    destroyBuggy(buggy[0]);
-    destroyBuggy(buggy[1]);
-    destroyBuggy(buggy[2]);
-    destroyBuggy(buggy[3]);
-    destroyBuggy(buggy[4]);
-    destroyBuggy(buggy[5]);
+    destroyBuggy(buggy[0], turr[0]);
+    destroyBuggy(buggy[1], turr[1]);
+    destroyBuggy(buggy[2], turr[2]);
+    destroyBuggy(buggy[3], turr[3]);
+    destroyBuggy(buggy[4], turr[4]);
+    destroyBuggy(buggy[5], turr[5]);
 
     dGeomDestroy(ground_box);
     dJointGroupDestroy(contactgroup);
