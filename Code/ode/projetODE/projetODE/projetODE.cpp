@@ -111,28 +111,15 @@ static bool lock_cam = true;
 
 bool tp;
 
+double rdm[HFIELD_DSTEP][HFIELD_WSTEP];
+
 float RandomFloat(float min, float max) {
     return  (max - min) * ((((float)rand()) / (float)RAND_MAX)) + min;
 }
 
 dReal heightfield_callback(void*, int x, int z)
 {
-    float tmp1 = 0.08, tmp2 = 0.08;
-    dReal fx = (((dReal)x) - (HFIELD_WSTEP - 1) / 2) / (dReal)(HFIELD_WSTEP - 1);
-    dReal fz = (((dReal)z) - (HFIELD_DSTEP - 1) / 2) / (dReal)(HFIELD_DSTEP - 1);
-
-    if (x%5 == 0) {
-        tmp1 = -tmp1;
-    }
-
-    if (z%5 == 0) {
-        tmp2 = -tmp2;
-    }
-
-    // Create an interesting 'hump' shape
-    dReal h = REAL(1.0) + REAL(1.0) * (tmp1 + fx - tmp2 + fz);//REAL(1.0) + (REAL(-16.0) * (fx * fx * fx + fz * fz * fz));
-
-    return h;
+    return rdm[x][z];
 }
 
 // this is called by dSpaceCollide when two objects in space are
@@ -153,14 +140,12 @@ static void nearCallback(void*, dGeomID o1, dGeomID o2)
         if (n > 0) {
             for (i = 0; i < n; i++) {
                 contact[i].surface.mode = dContactSlip1 | dContactSlip2 |
-                    dContactSoftERP | dContactSoftCFM | dContactApprox1 | dContactBounce;
+                    dContactSoftERP | dContactSoftCFM | dContactApprox1;
                 contact[i].surface.mu = dInfinity;
-                contact[i].surface.slip1 = 0.1;
-                contact[i].surface.slip2 = 0.1;
+                contact[i].surface.slip1 = 2;
+                contact[i].surface.slip2 = 2;
                 contact[i].surface.soft_erp = 0.5;
                 contact[i].surface.soft_cfm = 0.3;
-                contact[i].surface.bounce = 2;
-                contact[i].surface.bounce_vel = 0;
                 dJointID c = dJointCreateContact(world, contactgroup, &contact[i]);
                 dJointAttach(c,
                     dGeomGetBody(contact[i].geom.g1),
@@ -182,8 +167,8 @@ static void nearCallback(void*, dGeomID o1, dGeomID o2)
                 contact[i].surface.slip2 = 0.1;
                 contact[i].surface.soft_erp = 0.5;
                 contact[i].surface.soft_cfm = 0.3;
-                contact[i].surface.bounce = 2;
-                contact[i].surface.bounce_vel = 0.9;
+                contact[i].surface.bounce = 1.65;
+                contact[i].surface.bounce_vel = 1;
                 dJointID c = dJointCreateContact(world, contactgroup, &contact[i]);
                 dJointAttach(c,
                     dGeomGetBody(contact[i].geom.g1),
@@ -219,6 +204,12 @@ static float hpr[3] = { 0,-10,0 };
 
 static void start()
 {
+    for (int i = 0; i < HFIELD_DSTEP;i++) {
+        for (int j = 0; j < HFIELD_WSTEP; j++) {
+            rdm[i][j] = RandomFloat(1,1.3);
+        }
+    }
+
     dAllocateODEDataForThread(dAllocateMaskAll);
 
     dsSetViewpoint(xyz, hpr);
@@ -558,18 +549,19 @@ int main(int argc, char** argv)
     dSpaceAdd(car_space, sphere[3]);
 
     // environment
-    ground_box = dCreateBox(space, 2, 1.5, 1);
+    ground_box = dCreateBox(space, 2, 2, 1);
     //dMatrix3 R;
     //dRFromAxisAndAngle(R, 0, 1, 0, -0.15);
-    dGeomSetPosition(ground_box, 0, 0, -0.47);
+    dGeomSetPosition(ground_box, 18, 15, -0.47);
     //dGeomSetRotation(ground_box, R);
+
     // sphere
     sphbody = dBodyCreate(world);
     dMassSetSphere(&m, 0.2, SPHERERADIUS);
     dBodySetMass(sphbody, &m);
     sphgeom = dCreateSphere(0, SPHERERADIUS);
     dGeomSetBody(sphgeom, sphbody);
-    dBodySetPosition(sphbody, 0, 0, 5.5);
+    dBodySetPosition(sphbody, 15, 15, 2);
     dSpaceAdd(space, sphgeom);
 
     // obstacle
