@@ -145,8 +145,7 @@ static void start()
         "\t'5' to turn the buggy over.\n"
         "\t'6' to turn the second buggy over.\n"
         "\t'1' to save the current state to 'state.dif'.\n"
-        "\t%d\n"
-        ,sizeof(dReal));
+    );
 }
 
 static void command(int cmd)
