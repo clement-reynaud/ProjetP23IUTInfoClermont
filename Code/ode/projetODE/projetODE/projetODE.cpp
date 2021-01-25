@@ -189,10 +189,10 @@ static void command(int cmd)
             buggy[1].moveBuggy.steerBuggy += 0.3;
             break;
         case 't':
-            tirer(buggy[0], SPHERERADIUS, space, world);
+            tirer(&buggy[0], SPHERERADIUS, space, world);
             break;
         case'T':
-            tirer(buggy[1], SPHERERADIUS, space, world);
+            tirer(&buggy[1], SPHERERADIUS, space, world);
             break;
         case 'l':
             if (buggy[1].moveBuggy.lock_cam == true) {
@@ -251,6 +251,7 @@ static void simLoop(int pause)
     }
     dReal sides[3] = { LENGTH,WIDTH,HEIGHT };
 
+
     int colors[3];
     //Draw buggy 1 & 2
     colors[0] = 0; colors[1] = 1; colors[2] = 1;
@@ -272,7 +273,6 @@ static void simLoop(int pause)
     colors[0] = 1; colors[1] = 0; colors[2] = 1;
     dsSetTexture(DS_WOOD);
     drawBuggy(buggy[5], turr[5], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS, colors);
-
     dsSetColor(1, 1, 1);
     dVector3 ss;
     dGeomBoxGetLengths(ground_box, ss);

@@ -79,46 +79,46 @@ void camPos(Buggy buggy,static float* xyz, static float* hpr) // print a positio
     dsSetViewpoint(xyz, hpr);
 }
 
-void tirer(Buggy buggy, float sphereRadius, dSpaceID space, dWorldID world) {
+void tirer(Buggy* buggy, float sphereRadius, dSpaceID space, dWorldID world) {
     int i, j, k;
     dMass m;
-    if (buggy.bulletMax.num < 5) {
+    if (buggy->bulletMax.num < 5) {
         // new object to be created
-        i = buggy.bulletMax.num;
+        i = buggy->bulletMax.num;
         //printf("nb balles %d",buggy.bulletMax.num);
-        buggy.bulletMax.num++;
+        buggy->bulletMax.num++;
     }
 
     else {
         // recycle existing object
-        i = buggy.bulletMax.nextobj++;
-        buggy.bulletMax.nextobj %= buggy.bulletMax.num; // wrap-around if needed
+        i = buggy->bulletMax.nextobj++;
+        buggy->bulletMax.nextobj %= buggy->bulletMax.num; // wrap-around if needed
 
         // destroy the body and geoms for slot i
-        dBodyDestroy(buggy.bulletMax.obj[i].body);
-        buggy.bulletMax.obj[i].body = 0;
+        dBodyDestroy(buggy->bulletMax.obj[i].body);
+        buggy->bulletMax.obj[i].body = 0;
 
 
-        if (buggy.bulletMax.obj[i].geom) {
-            dGeomDestroy(buggy.bulletMax.obj[i].geom);
-            buggy.bulletMax.obj[i].geom = 0;
+        if (buggy->bulletMax.obj[i].geom) {
+            dGeomDestroy(buggy->bulletMax.obj[i].geom);
+            buggy->bulletMax.obj[i].geom = 0;
         }
     }
-    buggy.bulletMax.obj[i].body = dBodyCreate(world);
+    buggy->bulletMax.obj[i].body = dBodyCreate(world);
     dMassSetSphere(&m, 0.2, sphereRadius);
-    dBodySetMass(buggy.bulletMax.obj[i].body, &m);
-    buggy.bulletMax.obj[i].geom = dCreateSphere(0, sphereRadius);
-    dGeomSetBody(buggy.bulletMax.obj[i].geom, buggy.bulletMax.obj[i].body);
-    dSpaceAdd(space, buggy.bulletMax.obj[i].geom);
+    dBodySetMass(buggy->bulletMax.obj[i].body, &m);
+    buggy->bulletMax.obj[i].geom = dCreateSphere(0, sphereRadius);
+    dGeomSetBody(buggy->bulletMax.obj[i].geom, buggy->bulletMax.obj[i].body);
+    dSpaceAdd(space, buggy->bulletMax.obj[i].geom);
 
-    const dReal* cpos = dBodyGetPosition(buggy.chassis[0]);
+    const dReal* cpos = dBodyGetPosition(buggy->chassis[0]);
     dReal pos[3];
     pos[0] = cpos[0];
     pos[1] = cpos[1];
     pos[2] = cpos[2];
-    const dReal* rota = dBodyGetRotation(buggy.chassis[0]);
-    dBodySetPosition(buggy.bulletMax.obj[i].body, pos[0], pos[1], pos[2] + 0.55);
+    const dReal* rota = dBodyGetRotation(buggy->chassis[0]);
+    dBodySetPosition(buggy->bulletMax.obj[i].body, pos[0], pos[1], pos[2] + 0.55);
     int force = 5;
-    dBodySetLinearVel(buggy.bulletMax.obj[i].body, -(rota[0] * (-force)), -(rota[1] * (force)), 1);
-    dBodySetAngularVel(buggy.bulletMax.obj[i].body, 0, 0, 0);
+    dBodySetLinearVel(buggy->bulletMax.obj[i].body, -(rota[0] * (-force)), -(rota[1] * (force)), 1);
+    dBodySetAngularVel(buggy->bulletMax.obj[i].body, 0, 0, 0);
 }
