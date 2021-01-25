@@ -85,7 +85,6 @@ void tirer(Buggy* buggy, float sphereRadius, dSpaceID space, dWorldID world) {
     if (buggy->bulletMax.num < 5) {
         // new object to be created
         i = buggy->bulletMax.num;
-        //printf("nb balles %d",buggy.bulletMax.num);
         buggy->bulletMax.num++;
     }
 

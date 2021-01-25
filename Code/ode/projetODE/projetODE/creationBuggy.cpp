@@ -1,17 +1,17 @@
 #include "creationBuggy.h"
 
-void drawBuggy(Buggy buggy,Turret turr, dReal* sides, float boxLenght, float boxWidth, float boxHeight, float cylinderLenght, float cylinderRadius, float sphereRadius, float radius, int* colors){
-    dsSetColor(colors[0], colors[1], colors[2]);
+void drawBuggy(Buggy buggy, dReal* sides, float boxLenght, float boxWidth, float boxHeight, float cylinderLenght, float cylinderRadius, float sphereRadius, float radius){
+    dsSetColor(buggy.colors[0], buggy.colors[1], buggy.colors[2]);
     dsDrawBox(dBodyGetPosition(buggy.chassis[0]), dBodyGetRotation(buggy.chassis[0]), sides);
     dsSetColor(1, 1, 1);
     for (int i = 0; i <= 3; i++) dsDrawCylinder(dBodyGetPosition(buggy.roues[i]),
         dBodyGetRotation(buggy.roues[i]), 0.2f, radius);
     
     //Cylinder
-    dsSetColor(colors[0], colors[1], colors[2]);
+    dsSetColor(buggy.colors[0], buggy.colors[1], buggy.colors[2]);
     //Turret
-    const dReal* CPos = dBodyGetPosition(turr.canonBody);
-    const dReal* CRot = dBodyGetRotation(turr.canonBody);
+    const dReal* CPos = dBodyGetPosition(buggy.turret.canonBody);
+    const dReal* CRot = dBodyGetRotation(buggy.turret.canonBody);
     const double cpos[3] = { CPos[0], CPos[1], CPos[2] };
     const double crot[12] = { CRot[0], CRot[1], CRot[2], CRot[3], CRot[4], CRot[5], CRot[6], CRot[7], CRot[8], CRot[9], CRot[10], CRot[11] };
     dsDrawCylinder
@@ -25,10 +25,10 @@ void drawBuggy(Buggy buggy,Turret turr, dReal* sides, float boxLenght, float box
     //Box
     dsSetColor(1, 1, 1);
     dReal boxsides[3] = { boxLenght,boxWidth,boxHeight };
-    dsDrawBox(dBodyGetPosition(turr.boxBody), dBodyGetRotation(turr.boxBody), boxsides);
+    dsDrawBox(dBodyGetPosition(buggy.turret.boxBody), dBodyGetRotation(buggy.turret.boxBody), boxsides);
 
     //Bullet
-    dsSetColor(colors[0], colors[1], colors[2]);
+    dsSetColor(buggy.colors[0], buggy.colors[1], buggy.colors[2]);
     for (int i = 0; i < buggy.bulletMax.num; i++) {
         const dReal* SPos = dBodyGetPosition(buggy.bulletMax.obj[i].body);
         const dReal* SRot = dBodyGetRotation(buggy.bulletMax.obj[i].body);
@@ -38,7 +38,41 @@ void drawBuggy(Buggy buggy,Turret turr, dReal* sides, float boxLenght, float box
     }
 }
 
-void createABuggy(Buggy* buggy, Turret* turret, dMass m,float bMass, float cMass, float wMass, float length, float width, float heigh, float boxLenght,float boxWidth, float boxHeight, float cylinderLenght, float cylinderRadius, float radius,int x, int y, int z,const dVector3 yunit,const dVector3 zunit, dSpaceID space, dWorldID world){
+//L'ordre des positions dans le tableau est important.
+const dReal** sendPosToDraw(Buggy buggy) {
+    const dReal* positions[24];
+    positions[0] = dBodyGetPosition(buggy.chassis[0]);
+    positions[1] = dBodyGetRotation(buggy.chassis[0]);
+
+    positions[2] = dBodyGetPosition(buggy.roues[0]);
+    positions[3] = dBodyGetRotation(buggy.roues[0]);
+
+    positions[4] = dBodyGetPosition(buggy.roues[1]);
+    positions[5] = dBodyGetRotation(buggy.roues[1]);
+
+    positions[6] = dBodyGetPosition(buggy.roues[2]);
+    positions[7] = dBodyGetRotation(buggy.roues[2]);
+
+    positions[8] = dBodyGetPosition(buggy.roues[3]);
+    positions[9] = dBodyGetRotation(buggy.roues[3]);
+
+    positions[10] = dBodyGetPosition(buggy.turret.canonBody);
+    positions[11] = dBodyGetRotation(buggy.turret.canonBody);
+
+    positions[12] = dBodyGetPosition(buggy.turret.boxBody);
+    positions[13] = dBodyGetRotation(buggy.turret.boxBody);
+
+    int i = 14;
+    for (int cpt = 0; cpt < buggy.bulletMax.num; cpt++) {
+        positions[i] = dBodyGetPosition(buggy.bulletMax.obj[cpt].body);
+            i++;
+        positions[i] = dBodyGetRotation(buggy.bulletMax.obj[cpt].body);
+            i++;
+    }
+    return positions;
+}
+
+void createABuggy(Buggy* buggy, dMass m,float bMass, float cMass, float wMass, float length, float width, float heigh, float boxLenght,float boxWidth, float boxHeight, float cylinderLenght, float cylinderRadius, float radius,int x, int y, int z,const dVector3 yunit,const dVector3 zunit, dSpaceID space, dWorldID world){
     int i;
 
     // chassis body
@@ -103,39 +137,39 @@ void createABuggy(Buggy* buggy, Turret* turret, dMass m,float bMass, float cMass
     }
 
     //TurretBox
-    turret->boxBody = dBodyCreate(world);
-    dBodySetPosition(turret->boxBody, x, y, z + 1);
+    buggy->turret.boxBody = dBodyCreate(world);
+    dBodySetPosition(buggy->turret.boxBody, x, y, z + 1);
     dMassSetBox(&m, 1, boxLenght, boxWidth, boxHeight);
     dMassAdjust(&m, bMass);
-    dBodySetMass(turret->boxBody, &m);
-    turret->boxGeom = dCreateBox(0, boxLenght, boxWidth, boxHeight);
-    dGeomSetBody(turret->boxGeom, turret->boxBody);
-    dBodySetPosition(turret->boxBody, x, y, z + heigh);
-    dSpaceAdd(space, turret->boxGeom);
+    dBodySetMass(buggy->turret.boxBody, &m);
+    buggy->turret.boxGeom = dCreateBox(0, boxLenght, boxWidth, boxHeight);
+    dGeomSetBody(buggy->turret.boxGeom, buggy->turret.boxBody);
+    dBodySetPosition(buggy->turret.boxBody, x, y, z + heigh);
+    dSpaceAdd(space, buggy->turret.boxGeom);
 
     //Joint TurretBox and chassis
-    turret->jointChassis_Box = dJointCreateFixed(world, 0);
-    dJointAttach(turret->jointChassis_Box, buggy->chassis[0], turret->boxBody);
-    dJointSetFixed(turret->jointChassis_Box);
+    buggy->turret.jointChassis_Box = dJointCreateFixed(world, 0);
+    dJointAttach(buggy->turret.jointChassis_Box, buggy->chassis[0], buggy->turret.boxBody);
+    dJointSetFixed(buggy->turret.jointChassis_Box);
 
     //Canon
-    turret->canonBody = dBodyCreate(world);
+    buggy->turret.canonBody = dBodyCreate(world);
     dQuaternion q;
     dMassSetCylinder(&m, 1.0, 3, cylinderRadius, cylinderLenght);
-    dBodySetMass(turret->canonBody, &m);
+    dBodySetMass(buggy->turret.canonBody, &m);
     dMassAdjust(&m, bMass);
-    turret->canonGeom = dCreateCylinder(0, cylinderRadius, cylinderLenght);
-    dGeomSetBody(turret->canonGeom, turret->canonBody);
-    dBodySetPosition(turret->canonBody, x, y, z + heigh + boxHeight - 0.1);
-    dSpaceAdd(space, turret->canonGeom);
+    buggy->turret.canonGeom = dCreateCylinder(0, cylinderRadius, cylinderLenght);
+    dGeomSetBody(buggy->turret.canonGeom, buggy->turret.canonBody);
+    dBodySetPosition(buggy->turret.canonBody, x, y, z + heigh + boxHeight - 0.1);
+    dSpaceAdd(space, buggy->turret.canonGeom);
     dMatrix3 Rbox;
     dRFromAxisAndAngle(Rbox, 0, 90, 0, 80);
-    dGeomSetRotation(turret->canonGeom, Rbox);
+    dGeomSetRotation(buggy->turret.canonGeom, Rbox);
 
     // joint TurretBox Canon
-    turret->jointBox_Canon = dJointCreateFixed(world, 0);
-    dJointAttach(turret->jointBox_Canon, turret->canonBody, turret->boxBody);
-    dJointSetFixed(turret->jointBox_Canon);
+    buggy->turret.jointBox_Canon = dJointCreateFixed(world, 0);
+    dJointAttach(buggy->turret.jointBox_Canon, buggy->turret.canonBody, buggy->turret.boxBody);
+    dJointSetFixed(buggy->turret.jointBox_Canon);
 
     // create car space and add it to the top level space
     buggy->car_space = dSimpleSpaceCreate(space);
@@ -147,12 +181,12 @@ void createABuggy(Buggy* buggy, Turret* turret, dMass m,float bMass, float cMass
     dSpaceAdd(buggy->car_space, buggy->sphere[3]);
 }
 
-void destroyBuggy(Buggy buggy,Turret turr){
+void destroyBuggy(Buggy buggy){
     dGeomDestroy(buggy.box[0]);
     dGeomDestroy(buggy.sphere[0]);
     dGeomDestroy(buggy.sphere[1]);
     dGeomDestroy(buggy.sphere[2]);
     dGeomDestroy(buggy.sphere[3]);
-    dGeomDestroy(turr.canonGeom);
-    dGeomDestroy(turr.boxGeom);
+    dGeomDestroy(buggy.turret.canonGeom);
+    dGeomDestroy(buggy.turret.boxGeom);
 }

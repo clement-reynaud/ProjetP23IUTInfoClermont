@@ -1,9 +1,4 @@
 #pragma once
-#include <ode/ode.h>
-#include <drawstuff/drawstuff.h>
-#include "texturepath.h"
-#include "math.h"
-#include <cmath>
 #include "creationBuggy.h"
 
 #ifdef dDOUBLE

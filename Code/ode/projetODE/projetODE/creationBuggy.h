@@ -30,22 +30,7 @@ typedef struct bulletMax{
     Bullet obj[5]; //Max number of sphere per buggy
 }BulletMax; 
 
-
-
-typedef struct buggy{
-    dBodyID chassis[1];
-    dBodyID roues[4];
-    dJointID jointChassis_roues[4];
-    dSpaceID car_space;
-    dGeomID box[1];
-    dGeomID sphere[4];
-
-    MoveBuggy moveBuggy;
-
-    BulletMax bulletMax;
-}Buggy;
-
-typedef struct turret{
+typedef struct turret {
     dGeomID canonGeom;
     dBodyID canonBody;
     dJointID jointBox_Canon;
@@ -54,6 +39,24 @@ typedef struct turret{
     dJointID jointChassis_Box;
 }Turret;
 
-void drawBuggy(Buggy buggy, Turret turr, dReal* sides, float boxLenght, float boxWidth, float boxHeight, float cylinderLenght, float cylinderRadius, float sphereRadius, float radius, int* colors);
-void createABuggy(Buggy* buggy, Turret* turret, dMass m, float bMass, float cMass, float wMass, float length, float width, float heigh, float boxLenght, float boxWidth, float boxHeight, float cylinderLenght, float cylinderRadius, float radius, int x, int y, int z, const dVector3 yunit, const dVector3 zunit, dSpaceID space, dWorldID world);
-void destroyBuggy(Buggy buggy, Turret turr);
+typedef struct buggy{
+    dBodyID chassis[1];
+    dBodyID roues[4];
+    dJointID jointChassis_roues[4];
+    dSpaceID car_space;
+    dGeomID box[1];
+    dGeomID sphere[4];
+    int colors[3];
+
+    MoveBuggy moveBuggy;
+
+    BulletMax bulletMax;
+    Turret turret;
+}Buggy;
+
+
+
+void drawBuggy(Buggy buggy, dReal* sides, float boxLenght, float boxWidth, float boxHeight, float cylinderLenght, float cylinderRadius, float sphereRadius, float radius);
+const dReal** sendPosToDraw(Buggy buggy);
+void createABuggy(Buggy* buggy, dMass m, float bMass, float cMass, float wMass, float length, float width, float heigh, float boxLenght, float boxWidth, float boxHeight, float cylinderLenght, float cylinderRadius, float radius, int x, int y, int z, const dVector3 yunit, const dVector3 zunit, dSpaceID space, dWorldID world);
+void destroyBuggy(Buggy buggy);

@@ -34,6 +34,7 @@
 #include "creationBuggy.h"
 #include "deplaceBuggy.h"
 #include "projetODE.h"
+#include "client.h"
 
 
 #ifdef _MSC_VER
@@ -59,8 +60,6 @@
 #define STARTX1 -5   //Start heigth of the buggy
 #define STARTY1 0   //Start y of chassis 1
 #define STARTZ 2	// starting height of chassis
-#define STARTX2 -10   //Start x of chassis 2
-#define STARTY2 0   //Start y of chassis 2
 
 //Turret def
 //canon
@@ -146,11 +145,8 @@ static void start()
         "\t'5' to turn the buggy over.\n"
         "\t'6' to turn the second buggy over.\n"
         "\t'1' to save the current state to 'state.dif'.\n"
-        /*"\t'2' to lower the cannon.\n"
-        "\t'3' to raise the cannon.\n"
-        "\t'4' to fire with the cannon.\n"
-        */
-    );
+        "\t%d\n"
+        ,sizeof(dReal));
 }
 
 static void command(int cmd)
@@ -251,29 +247,27 @@ static void simLoop(int pause)
     }
     dReal sides[3] = { LENGTH,WIDTH,HEIGHT };
 
-
-    int colors[3];
     //Draw buggy 1 & 2
-    colors[0] = 0; colors[1] = 1; colors[2] = 1;
     dsSetTexture(DS_WOOD);
-    drawBuggy(buggy[0], turr[0], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS, colors);
-    colors[0] = 1; colors[1] = 0; colors[2] = 0;
+    drawBuggy(buggy[0], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS);
+    
     dsSetTexture(DS_WOOD);
-    drawBuggy(buggy[1], turr[1], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS, colors);
-    colors[0] = 0; colors[1] = 1; colors[2] = 0;
-    dsSetTexture(DS_WOOD);
+    drawBuggy(buggy[1], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS);
+    
     //Draw buggy 3, 4, 5 & 6
-    drawBuggy(buggy[2], turr[2], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS, colors);
-    colors[0] = 0; colors[1] = 0; colors[2] = 1;
     dsSetTexture(DS_WOOD);
-    drawBuggy(buggy[3], turr[3], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS, colors);
-    colors[0] = 1; colors[1] = 1; colors[2] = 0;
+    drawBuggy(buggy[2], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS);
+
     dsSetTexture(DS_WOOD);
-    drawBuggy(buggy[4], turr[4], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS, colors);
-    colors[0] = 1; colors[1] = 0; colors[2] = 1;
+    drawBuggy(buggy[3], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS);
+    
     dsSetTexture(DS_WOOD);
-    drawBuggy(buggy[5], turr[5], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS, colors);
+    drawBuggy(buggy[4], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS);
+    
+    dsSetTexture(DS_WOOD);
+    drawBuggy(buggy[5], sides, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, SPHERERADIUS, RADIUS);
     dsSetColor(1, 1, 1);
+    
     dVector3 ss;
     dGeomBoxGetLengths(ground_box, ss);
     dsDrawBox(dGeomGetPosition(ground_box), dGeomGetRotation(ground_box), ss);
@@ -299,27 +293,24 @@ int main(int argc, char** argv){
     contactgroup = dJointGroupCreate(0);
     dWorldSetGravity(world, 0, 0, -0.98);
     ground = dCreatePlane(space, 0, 0, 1, 0);
-    //void createABuggy(Buggy* buggy, Turret* turret, dMass m,float bMass, float cMass, float wMass, float length, float width, float heigh, float boxLenght,float boxWidth, float boxHeight, float cylinderLenght, 
-    //float cylinderRadius, float radius,int x, int y, int z,const dVector3 yunit,const dVector3 zunit, dSpaceID space, dWorldID world){
 
-    /*
-    //Turret def
-//canon
-#define TURRRADIUS    0.1
-#define TURRLENGTH    0.6
-
-//box
-#define BOXLENGTH 0.15    // box length
-#define BOXWIDTH 0.15    // box width
-#define BOXHEIGHT 0.3    // box height
-#define BMASS 0.1        // box mass
-    */
-    createABuggy(&buggy[0], &turr[0], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -1, 0, STARTZ, yunit, zunit, space, world);
-    createABuggy(&buggy[1], &turr[1], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -5, 0, STARTZ, yunit, zunit, space, world);
-    createABuggy(&buggy[2], &turr[2], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -5, 3, STARTZ, yunit, zunit, space, world);
-    createABuggy(&buggy[3], &turr[3], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -5, 6, STARTZ, yunit, zunit, space, world);
-    createABuggy(&buggy[4], &turr[4], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -5, -3, STARTZ, yunit, zunit, space, world);
-    createABuggy(&buggy[5], &turr[5], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -5, -6, STARTZ, yunit, zunit, space, world);
+    buggy[0].colors[0] = 0; buggy[0].colors[1] = 1; buggy[0].colors[2] = 1;
+    createABuggy(&buggy[0], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -1, 0, STARTZ, yunit, zunit, space, world);
+    
+    buggy[1].colors[0] = 1; buggy[1].colors[1] = 0; buggy[1].colors[2] = 0;
+    createABuggy(&buggy[1], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -5, 0, STARTZ, yunit, zunit, space, world);
+    
+    buggy[2].colors[0] = 0; buggy[2].colors[1] = 1; buggy[2].colors[2] = 0;
+    createABuggy(&buggy[2], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -5, 3, STARTZ, yunit, zunit, space, world);
+    
+    buggy[3].colors[0] = 0; buggy[3].colors[1] = 0; buggy[3].colors[2] = 1;
+    createABuggy(&buggy[3], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -5, 6, STARTZ, yunit, zunit, space, world);
+    
+    buggy[4].colors[0] = 1; buggy[4].colors[1] = 1; buggy[4].colors[2] = 0;
+    createABuggy(&buggy[4], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -5, -3, STARTZ, yunit, zunit, space, world);
+    
+    buggy[5].colors[0] = 1; buggy[5].colors[1] = 0; buggy[5].colors[2] = 1;
+    createABuggy(&buggy[5], m, BMASS, CMASS, WMASS, LENGTH, WIDTH, HEIGHT, BOXLENGTH, BOXWIDTH, BOXHEIGHT, TURRLENGTH, TURRRADIUS, RADIUS, -5, -6, STARTZ, yunit, zunit, space, world);
 
     // environment
     ground_box = dCreateBox(space, 2, 1.5, 1);
@@ -331,12 +322,12 @@ int main(int argc, char** argv){
     // run simulation
     dsSimulationLoop(argc, argv, 1000, 800, &fn);
 
-    destroyBuggy(buggy[0], turr[0]);
-    destroyBuggy(buggy[1], turr[1]);
-    destroyBuggy(buggy[2], turr[2]);
-    destroyBuggy(buggy[3], turr[3]);
-    destroyBuggy(buggy[4], turr[4]);
-    destroyBuggy(buggy[5], turr[5]);
+    destroyBuggy(buggy[0]);
+    destroyBuggy(buggy[1]);
+    destroyBuggy(buggy[2]);
+    destroyBuggy(buggy[3]);
+    destroyBuggy(buggy[4]);
+    destroyBuggy(buggy[5]);
 
     dGeomDestroy(ground_box);
     dJointGroupDestroy(contactgroup);
