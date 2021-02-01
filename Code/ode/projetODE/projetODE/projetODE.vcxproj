@@ -154,9 +154,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="projetODE.cpp" />
+    <ClCompile Include="terrain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="projetODE.h" />
+    <ClInclude Include="terrain.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
