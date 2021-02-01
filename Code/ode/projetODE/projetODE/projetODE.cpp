@@ -27,7 +27,7 @@
 
  */
 
-
+#pragma once
 #include <ode/ode.h>
 #include <drawstuff/drawstuff.h>
 #include "texturepath.h"
@@ -37,6 +37,7 @@
 #include <random>
 #include <algorithm>
 #include <iterator>
+#include "terrain.h";
 
 #ifdef _MSC_VER
 #pragma warning(disable:4244 4305)  // for VC++, no precision loss complaints
@@ -64,18 +65,7 @@
 #define WMASS 0.2	// wheel mass
 #define SPHERERADIUS 0.4
 
-// Heightfield dimensions
 
-#define HFIELD_WSTEP			30		// Vertex count along edge >= 2
-#define HFIELD_DSTEP			30
-
-#define HFIELD_WIDTH			REAL(20.0 )
-#define HFIELD_DEPTH			REAL(20.0 )
-
-#define HFIELD_WSAMP			( HFIELD_WIDTH / ( HFIELD_WSTEP-1 ) )
-#define HFIELD_DSAMP			( HFIELD_DEPTH / ( HFIELD_DSTEP-1 ) )
-
-#define	DEGTORAD			0.01745329251994329577f				//!< PI / 180.0, convert degrees to radians
 
 //
 static const dVector3 yunit = { 0, 1, 0 }, zunit = { 0, 0, 1 };
@@ -102,7 +92,7 @@ static dGeomID obstacle[4];
 static dBodyID sphbody;
 static dGeomID sphgeom;
 
-dGeomID gheight;
+
 
 // things that the user controls
 
@@ -110,17 +100,6 @@ static dReal speed = 0, steer = 0;	// user commands
 static bool lock_cam = true;
 
 bool tp;
-
-double rdm[HFIELD_DSTEP][HFIELD_WSTEP];
-
-float RandomFloat(float min, float max) {
-    return  (max - min) * ((((float)rand()) / (float)RAND_MAX)) + min;
-}
-
-dReal heightfield_callback(void*, int x, int z)
-{
-    return rdm[x][z];
-}
 
 // this is called by dSpaceCollide when two objects in space are
 // potentially colliding.
@@ -204,11 +183,7 @@ static float hpr[3] = { 0,-10,0 };
 
 static void start()
 {
-    for (int i = 0; i < HFIELD_DSTEP;i++) {
-        for (int j = 0; j < HFIELD_WSTEP; j++) {
-            rdm[i][j] = RandomFloat(1,1.3);
-        }
-    }
+    initTerrain();
 
     dAllocateODEDataForThread(dAllocateMaskAll);
 
@@ -267,7 +242,6 @@ void camPos(dBodyID obj_body) // print a position
     //printf("%f\n", result_cos);
     dsSetViewpoint(xyz, hpr);
     //printf("rota0: %f\trota1: %f\n", rota[0], rota[1]);
-
 }
 
 void retourner(dBodyID obj_body) {
@@ -324,54 +298,6 @@ static void command(int cmd)
             fclose(f);
         }
     }
-    }
-}
-
-void drawGeom(dGeomID g, const dReal* pos, const dReal* R, int show_aabb)
-{
-    if (!g)
-        return;
-    if (!pos)
-        pos = dGeomGetPosition(g);
-    if (!R)
-        R = dGeomGetRotation(g);
-
-    int type = dGeomGetClass(g);
-    if (type == dHeightfieldClass) {
-
-        // Set ox and oz to zero for DHEIGHTFIELD_CORNER_ORIGIN mode.
-        int ox = (int)(-HFIELD_WIDTH / 2);
-        int oz = (int)(-HFIELD_DEPTH / 2);
-
-        //	for ( int tx = -1; tx < 2; ++tx )
-        //	for ( int tz = -1; tz < 2; ++tz )
-        dsSetColorAlpha(0.5, 1, 0.5, 1);
-        dsSetTexture(DS_NONE);
-
-        for (int i = 0; i < HFIELD_WSTEP - 1; ++i)
-            for (int j = 0; j < HFIELD_DSTEP - 1; ++j) {
-                dReal a[3], b[3], c[3], d[3];
-
-                a[0] = ox + (i)*HFIELD_WSAMP;
-                a[1] = heightfield_callback(NULL, i, j);
-                a[2] = oz + (j)*HFIELD_DSAMP;
-
-                b[0] = ox + (i + 1) * HFIELD_WSAMP;
-                b[1] = heightfield_callback(NULL, i + 1, j);
-                b[2] = oz + (j)*HFIELD_DSAMP;
-
-                c[0] = ox + (i)*HFIELD_WSAMP;
-                c[1] = heightfield_callback(NULL, i, j + 1);
-                c[2] = oz + (j + 1) * HFIELD_DSAMP;
-
-                d[0] = ox + (i + 1) * HFIELD_WSAMP;
-                d[1] = heightfield_callback(NULL, i + 1, j + 1);
-                d[2] = oz + (j + 1) * HFIELD_DSAMP;
-
-                dsDrawTriangle(pos, R, a, c, b, 1);
-                dsDrawTriangle(pos, R, b, c, d, 1);
-            }
-
     }
 }
 
@@ -461,7 +387,7 @@ static void simLoop(int pause)
         SPHERERADIUS
     ); // single precision
 
-    drawGeom(gheight, 0, 0, 0);
+    drawHFieldGeom(getHField(), 0, 0, 0);
 }
 
 
@@ -587,34 +513,7 @@ int main(int argc, char** argv)
         dGeomSetRotation(obstacle[i], R1);
     }
 
-    // our heightfield floor
-
-    dHeightfieldDataID heightid = dGeomHeightfieldDataCreate();
-
-    // Create an finite heightfield.
-    dGeomHeightfieldDataBuildCallback(heightid, NULL, heightfield_callback,
-        HFIELD_WIDTH, HFIELD_DEPTH, HFIELD_WSTEP, HFIELD_DSTEP,
-        REAL(1.0), REAL(0.0), REAL(0.0), 0);
-
-    // Give some very bounds which, while conservative,
-    // makes AABB computation more accurate than +/-INF.
-    dGeomHeightfieldDataSetBounds(heightid, REAL(-4.0), REAL(+6.0));
-
-    gheight = dCreateHeightfield(space, heightid, 1);
-
-    dVector3 pos;
-    pos[0] = 0;
-    pos[1] = 0;
-    pos[2] = 0;
-
-    // Rotate so Z is up, not Y (which is the default orientation)
-    dMatrix3 R;
-    dRSetIdentity(R);
-    dRFromAxisAndAngle(R, 1, 0, 0, DEGTORAD * 90);
-
-    // Place it.
-    dGeomSetRotation(gheight, R);
-    dGeomSetPosition(gheight, pos[0], pos[1], pos[2]);
+    createHField(space);
     
     // run simulation
     dsSimulationLoop(argc, argv, 1000, 800, &fn);

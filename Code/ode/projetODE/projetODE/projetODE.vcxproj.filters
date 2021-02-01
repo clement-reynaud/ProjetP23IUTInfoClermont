@@ -12,8 +12,14 @@
     <ClCompile Include="projetODE.cpp">
       <Filter>ode\projetODE</Filter>
     </ClCompile>
+    <ClCompile Include="terrain.cpp">
+      <Filter>ode\projetODE</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="projetODE.h" />
+    <ClInclude Include="terrain.h">
+      <Filter>ode\projetODE</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
