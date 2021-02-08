@@ -1,4 +1,0 @@
-﻿  projetODE.cpp
-D:\GitHub\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\projetODE.cpp(240,11): warning C4101: 'j' : variable locale non référencée
-D:\GitHub\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\projetODE.cpp(607,17): warning C4101: 'q' : variable locale non référencée
-  projetODE.vcxproj -> D:\GitHub\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\..\..\lib\DebugDoubleDLL\projetODE.exe
