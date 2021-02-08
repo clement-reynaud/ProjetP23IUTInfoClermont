@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ode">
+      <UniqueIdentifier>{bb72ae9b-b27b-4753-92bb-8aa2c02d02d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ode\projetODE">
+      <UniqueIdentifier>{fa0f0d10-bd98-48da-874b-dc675a214326}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="projetODE.cpp">
+      <Filter>ode\projetODE</Filter>
+    </ClCompile>
+    <ClCompile Include="terrain.cpp">
+      <Filter>ode\projetODE</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="projetODE.h" />
+    <ClInclude Include="terrain.h">
+      <Filter>ode\projetODE</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
