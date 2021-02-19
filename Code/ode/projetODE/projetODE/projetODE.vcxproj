@@ -153,10 +153,14 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="creationBuggy.cpp" />
+    <ClCompile Include="deplaceBuggy.cpp" />
     <ClCompile Include="projetODE.cpp" />
     <ClCompile Include="terrain.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="creationBuggy.h" />
+    <ClInclude Include="deplaceBuggy.h" />
     <ClInclude Include="projetODE.h" />
     <ClInclude Include="terrain.h" />
   </ItemGroup>

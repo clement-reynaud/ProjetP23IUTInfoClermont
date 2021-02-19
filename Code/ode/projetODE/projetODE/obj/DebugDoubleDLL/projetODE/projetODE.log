@@ -1,5 +1,5 @@
 ﻿  projetODE.cpp
-D:\Cours\Projet\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\projetODE.cpp(40,10): warning C4067: jetons inattendus après la directive du préprocesseur - saut de ligne attendu
-  terrain.cpp
-  Génération de code en cours...
+D:\Cours\Projet\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\deplaceBuggy.h(15,43): warning C4042: 'xyz' : classe de stockage incorrecte
+D:\Cours\Projet\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\deplaceBuggy.h(15,62): warning C4042: 'hpr' : classe de stockage incorrecte
+D:\Cours\Projet\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\projetODE.cpp(42,10): warning C4067: jetons inattendus après la directive du préprocesseur - saut de ligne attendu
   projetODE.vcxproj -> D:\Cours\Projet\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\..\..\lib\DebugDoubleDLL\projetODE.exe

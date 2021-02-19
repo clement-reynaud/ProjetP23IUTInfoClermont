@@ -64,9 +64,6 @@
 #define WMASS 0.2	// wheel mass
 #define STARTZ 2	// starting height of chassis
 
-//
-static const dVector3 yunit = { 0, 1, 0 }, zunit = { 0, 0, 1 };
-
 //Turret def
 //canon
 #define TURRRADIUS    0.1
@@ -96,7 +93,6 @@ static dGeomID obstacle[4];
 static dBodyID sphbody;
 static dGeomID sphgeom;
 
-dGeomID gheight;
 static dGeomID ground;
 
 // things that the user controls
