@@ -1,2 +1,20 @@
 ﻿  meshSol.cpp
 c1xx : fatal error C1083: Impossible d'ouvrir le fichier source : 'meshSol.cpp' : No such file or directory
+  projetODE.cpp
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\SolModifie.h(8,10): warning C4244: 'initialisation' : conversion de 'double' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\SolModifie.h(9,9): warning C4244: 'initialisation' : conversion de 'double' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\SolModifie.h(10,10): warning C4244: 'initialisation' : conversion de 'double' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\SolModifie.h(11,10): warning C4244: 'initialisation' : conversion de 'double' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\SolModifie.h(12,10): warning C4244: 'initialisation' : conversion de 'double' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\SolModifie.h(13,10): warning C4244: 'initialisation' : conversion de 'double' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\SolModifie.h(14,10): warning C4244: 'initialisation' : conversion de 'double' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\SolModifie.h(15,10): warning C4244: 'initialisation' : conversion de 'double' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\SolModifie.h(16,10): warning C4244: 'initialisation' : conversion de 'double' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\SolModifie.h(17,10): warning C4244: 'initialisation' : conversion de 'double' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\SolModifie.h(18,10): warning C4244: 'initialisation' : conversion de 'double' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\SolModifie.h(19,10): warning C4244: 'initialisation' : conversion de 'double' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\SolModifie.h(20,10): warning C4244: 'initialisation' : conversion de 'double' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\SolModifie.h(21,10): warning C4244: 'initialisation' : conversion de 'double' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\SolModifie.h(22,10): warning C4244: 'initialisation' : conversion de 'double' en 'float', perte possible de données
+C:\Users\marie\OneDrive\Documents\ODE\ProjetP23IUTInfoClermont\Code\ode\projetODE\projetODE\SolModifie.h(23,10): warning C4244: 'initialisation' : conversion de 'double' en 'float', perte possible de données
+  Génération de code en cours...

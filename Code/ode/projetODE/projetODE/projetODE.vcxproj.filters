@@ -23,5 +23,8 @@
     <ClInclude Include="meshSol.h">
       <Filter>ode\projetODE\mesh</Filter>
     </ClInclude>
+    <ClInclude Include="SolModifie.h">
+      <Filter>ode\projetODE</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
